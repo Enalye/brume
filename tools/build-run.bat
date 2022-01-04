@@ -1,2 +1,2 @@
-cd ../magia
+cd ../brume
 dub run

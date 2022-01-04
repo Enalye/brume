@@ -1,4 +1,4 @@
-main {
+action main() {
     //print("Hello World");
     //let font = TrueTypeFont("script/Vera.ttf", 12, 0);
     
