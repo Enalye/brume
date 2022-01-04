@@ -2,7 +2,7 @@ action main() {
     //print("Hello World");
     //let font = TrueTypeFont("script/Vera.ttf", 12, 0);
     
-    Triangle t = triangle();
+    /*Triangle t = triangle();
 
     int i;
     loop {
@@ -15,5 +15,5 @@ action main() {
         t:draw(0f, 0f);
         i++;
         yield
-    }
+    }*/
 }

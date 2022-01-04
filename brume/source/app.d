@@ -1,11 +1,11 @@
 import std.stdio;
-import brume.common, brume.core;
+import brume.screen;
 
 void main() {
-	try {
-		runApplication();
-	}
-	catch (Exception e) {
-		writeln(e.msg);
-	}
+    try {
+        runApplication();
+    }
+    catch (Exception e) {
+        writeln(e.msg);
+    }
 }
