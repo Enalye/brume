@@ -25,32 +25,7 @@ import grimoire;
 import brume.constants;
 import brume.script;
 
-private {
-    SDL_Window* _sdlWindow;
-    SDL_Renderer* _sdlRenderer;
-    SDL_Texture* _renderTexture;
-
-    SDL_Surface* _icon;
-    uint _width, _height;
-
-    float _deltatime = 1f;
-    float _currentFps;
-    long _tickStartFrame;
-
-    bool _isChildGrabbed;
-    uint _idChildGrabbed;
-
-    uint _fps = 30u;
-
-    GrEngine _engine;
-
-    // Entrées
-    bool[KeyButton.max + 1] _keys1, _keys2;
-}
-
-private shared bool _isRunning = false;
-
-/// Liste des touches
+/// Liste des touches du clavier.
 enum KeyButton {
     unknown = SDL_SCANCODE_UNKNOWN,
     a = SDL_SCANCODE_A,
@@ -295,42 +270,202 @@ enum KeyButton {
     app2 = SDL_SCANCODE_APP2
 }
 
-/// Check whether the key associated with the ID is pressed. \
-/// Do not reset the value.
+/// Liste des boutons de la manette.
+enum ControllerButton {
+    unknown = SDL_CONTROLLER_BUTTON_INVALID,
+    a = SDL_CONTROLLER_BUTTON_A,
+    b = SDL_CONTROLLER_BUTTON_B,
+    x = SDL_CONTROLLER_BUTTON_X,
+    y = SDL_CONTROLLER_BUTTON_Y,
+    back = SDL_CONTROLLER_BUTTON_BACK,
+    guide = SDL_CONTROLLER_BUTTON_GUIDE,
+    start = SDL_CONTROLLER_BUTTON_START,
+    leftStick = SDL_CONTROLLER_BUTTON_LEFTSTICK,
+    rightStick = SDL_CONTROLLER_BUTTON_RIGHTSTICK,
+    leftShoulder = SDL_CONTROLLER_BUTTON_LEFTSHOULDER,
+    rightShoulder = SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
+    up = SDL_CONTROLLER_BUTTON_DPAD_UP,
+    down = SDL_CONTROLLER_BUTTON_DPAD_DOWN,
+    left = SDL_CONTROLLER_BUTTON_DPAD_LEFT,
+    right = SDL_CONTROLLER_BUTTON_DPAD_RIGHT
+}
+
+/// Liste des axes de la manette.
+enum ControllerAxis {
+    unknown = SDL_CONTROLLER_AXIS_INVALID,
+    leftX = SDL_CONTROLLER_AXIS_LEFTX,
+    leftY = SDL_CONTROLLER_AXIS_LEFTY,
+    rightX = SDL_CONTROLLER_AXIS_RIGHTX,
+    rightY = SDL_CONTROLLER_AXIS_RIGHTY,
+    leftTrigger = SDL_CONTROLLER_AXIS_TRIGGERLEFT,
+    rightTrigger = SDL_CONTROLLER_AXIS_TRIGGERRIGHT
+}
+
+private struct Controller {
+    SDL_GameController* sdlController;
+    SDL_Joystick* sdlJoystick;
+    int index, joystickId;
+}
+
+private {
+    shared bool _isRunning = false;
+
+    SDL_Window* _sdlWindow;
+    SDL_Renderer* _sdlRenderer;
+    SDL_Texture* _renderTexture;
+
+    SDL_Surface* _icon;
+
+    float _deltatime = 1f;
+    float _currentFps;
+    long _tickStartFrame;
+
+    // Entrées
+    Controller[] _controllers;
+    bool[KeyButton.max + 1] _keys1, _keys2;
+    bool[ControllerButton.max + 1] _buttons1, _buttons2;
+    float[ControllerAxis.max + 1] _axis = 0f;
+
+    // Programme
+    GrEngine _engine;
+}
+
+/// Vérifie si la touche associée à l'id est pressée. \
+/// Ne remet pas la touche à zéro.
 bool isButtonDown(KeyButton button) {
     return _keys1[button];
 }
 
-/// Check whether the key associated with the ID is pressed. \
-/// This function resets the value to false.
+/// Ditto
+bool isButtonDown(ControllerButton button) {
+    return _buttons1[button];
+}
+
+/// Vérifie si la touche associée à l'id est pressée. \
+/// Remet la touche à zéro.
 bool getButtonDown(KeyButton button) {
     const bool value = _keys2[button];
     _keys2[button] = false;
     return value;
 }
 
-/// Tells the application to finish.
-void stopApplication() {
-    _isRunning = false;
+/// Ditto
+bool getButtonDown(ControllerButton button) {
+    const bool value = _buttons2[button];
+    _buttons2[button] = false;
+    return value;
 }
 
-/// Check if the application's still running.
-bool isRunning() {
-    return _isRunning;
+/// Retourne la valeur actuelle de l'axe.
+float getAxis(ControllerAxis axis) {
+    return _axis[axis];
 }
 
-/// Capture les interruptions
-extern (C) void signalHandler(int sig) nothrow @nogc @system {
+/// Capture les interruptions.
+private extern (C) void _signalHandler(int sig) nothrow @nogc @system {
     cast(void) sig;
     _isRunning = false;
 }
 
-/// Process and dispatch window, input, etc events.
-bool processEvents() {
+/// Ouvre toutes les manettes connectées.
+private void _openControllers() {
+    foreach (index; 0 .. SDL_NumJoysticks())
+        addController(index);
+    SDL_GameControllerEventState(SDL_ENABLE);
+}
+
+/// Ferme toutes les manettes connectées.
+private void _closeControllers() {
+    foreach (ref controller; _controllers)
+        SDL_GameControllerClose(controller.sdlController);
+}
+
+/// Enregistre les dispositions des manettes présentent dans un fichier. \
+/// Se doit d'être dans un format valide.
+void addControllerMappingsFromFile(string filePath) {
+    import std.file : exists;
+
+    if (!exists(filePath))
+        throw new Exception("Could not find \'" ~ filePath ~ "\'.");
+    if (-1 == SDL_GameControllerAddMappingsFromFile(toStringz(filePath)))
+        throw new Exception("Invalid mapping file \'" ~ filePath ~ "\'.");
+}
+
+/// Enregistre une nouvelle disposition de manette. \
+/// Se doit d'être dans un format valide.
+void addControllerMapping(string mapping) {
+    if (-1 == SDL_GameControllerAddMapping(toStringz(mapping)))
+        throw new Exception("Invalid mapping.");
+}
+
+/// Essaie d'ajouter une nouvelle manette.
+void addController(int index) {
+    auto c = SDL_JoystickNameForIndex(index);
+    auto d = fromStringz(c);
+
+    if (!SDL_IsGameController(index)) {
+        //writeln("The device is not recognised as a game controller.");
+        auto stick = SDL_JoystickOpen(index);
+        auto guid = SDL_JoystickGetGUID(stick);
+        //writeln("The device guid is: ");
+        //foreach (i; 0 .. 16)
+        //    printf("%02x", guid.data[i]);
+        //writeln("");
+        return;
+    }
+    foreach (ref controller; _controllers) {
+        if (controller.index == index) {
+            //writeln("The controller is already open, aborted.");
+            return;
+        }
+    }
+
+    auto sdlController = SDL_GameControllerOpen(index);
+    if (!sdlController) {
+        //writeln("Could not connect the game controller.");
+        return;
+    }
+
+    Controller controller;
+    controller.sdlController = sdlController;
+    controller.index = index;
+    controller.sdlJoystick = SDL_GameControllerGetJoystick(controller.sdlController);
+    controller.joystickId = SDL_JoystickInstanceID(controller.sdlJoystick);
+    _controllers ~= controller;
+}
+
+/// Retire une manette connectée.
+void removeController(int joystickId) {
+    int index;
+    bool isControllerPresent;
+    foreach (ref controller; _controllers) {
+        if (controller.joystickId == joystickId) {
+            isControllerPresent = true;
+            break;
+        }
+        index++;
+    }
+
+    if (!isControllerPresent)
+        return;
+
+    SDL_GameControllerClose(_controllers[index].sdlController);
+
+    //Retire la manette de la liste.
+    if (index + 1 == _controllers.length)
+        _controllers.length--;
+    else if (index == 0)
+        _controllers = _controllers[1 .. $];
+    else
+        _controllers = _controllers[0 .. index] ~ _controllers[(index + 1) .. $];
+}
+
+/// Récupère les différents événements clavier et de la fenêtre.
+private bool _fetchEvents() {
     SDL_Event sdlEvent;
 
     if (!_isRunning) {
-        destroyWindow();
+        _destroyWindow();
         return false;
     }
 
@@ -338,7 +473,7 @@ bool processEvents() {
         switch (sdlEvent.type) {
         case SDL_QUIT:
             _isRunning = false;
-            destroyWindow();
+            _destroyWindow();
             return false;
         case SDL_KEYDOWN:
             if (sdlEvent.key.keysym.scancode >= _keys1.length)
@@ -355,22 +490,32 @@ bool processEvents() {
             _keys2[sdlEvent.key.keysym.scancode] = false;
             break;
         case SDL_CONTROLLERDEVICEADDED:
-            //addController(sdlEvent.cdevice.which);
+            addController(sdlEvent.cdevice.which);
             break;
         case SDL_CONTROLLERDEVICEREMOVED:
-            //removeController(sdlEvent.cdevice.which);
+            removeController(sdlEvent.cdevice.which);
             break;
         case SDL_CONTROLLERDEVICEREMAPPED:
-            //remapController(sdlEvent.cdevice.which);
             break;
         case SDL_CONTROLLERAXISMOTION:
-            //setControllerAxis(sdlEvent.caxis.axis, sdlEvent.caxis.value);
+            if (sdlEvent.caxis.axis >= 0 && sdlEvent.caxis.axis <= ControllerAxis.max) {
+                if (value < 0)
+                    _axis[axis] = sdlEvent.caxis.value / 32_768f;
+                else
+                    _axis[axis] = sdlEvent.caxis.value / 32_767f;
+            }
             break;
         case SDL_CONTROLLERBUTTONDOWN:
-            //setControllerButton(sdlEvent.cbutton.button, true);
+            if (sdlEvent.cbutton.button <= ControllerButton.max) {
+                _buttons1[sdlEvent.cbutton.button] = true;
+                _buttons2[sdlEvent.cbutton.button] = true;
+            }
             break;
         case SDL_CONTROLLERBUTTONUP:
-            //setControllerButton(sdlEvent.cbutton.button, false);
+            if (sdlEvent.cbutton.button <= ControllerButton.max) {
+                _buttons1[sdlEvent.cbutton.button] = false;
+                _buttons2[sdlEvent.cbutton.button] = false;
+            }
             break;
         default:
             break;
@@ -382,11 +527,11 @@ bool processEvents() {
 
 /// Main application loop
 void runApplication() {
-    createWindow();
+    _initWindow();
 
-    signal(SIGINT, &signalHandler);
+    signal(SIGINT, &_signalHandler);
     _isRunning = true;
-    //initializeControllers();
+    //_openControllers();
 
     _tickStartFrame = Clock.currStdTime();
 
@@ -409,17 +554,17 @@ void runApplication() {
     if (_engine.hasAction("main"))
         _engine.callAction("main");
 
-    while (processEvents()) {
+    while (_fetchEvents()) {
         //updateControllers(deltaTime);
 
         if (_engine.hasCoroutines)
             _engine.process();
 
-        renderWindow();
+        _renderWindow();
 
         long deltaTicks = Clock.currStdTime() - _tickStartFrame;
-        if (deltaTicks < (10_000_000 / _fps))
-            Thread.sleep(dur!("hnsecs")((10_000_000 / _fps) - deltaTicks));
+        if (deltaTicks < (10_000_000 / FRAME_RATE))
+            Thread.sleep(dur!("hnsecs")((10_000_000 / FRAME_RATE) - deltaTicks));
 
         deltaTicks = Clock.currStdTime() - _tickStartFrame;
         _tickStartFrame = Clock.currStdTime();
@@ -427,24 +572,21 @@ void runApplication() {
 }
 
 /// Create the application window.
-void createWindow() {
+private void _initWindow() {
     enforce(loadSDL() >= SDLSupport.sdl202);
     enforce(loadSDLImage() >= SDLImageSupport.sdlImage200);
     enforce(loadSDLMixer() >= SDLMixerSupport.sdlMixer200);
 
     enforce(SDL_Init(SDL_INIT_EVERYTHING) == 0,
-        "Could not initialize SDL: " ~ fromStringz(SDL_GetError()));
+        "la sdl n'a pas pu s'initialiser: " ~ fromStringz(SDL_GetError()));
 
     enforce(Mix_OpenAudio(44_100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS,
-            1024) != -1, "No audio device connected.");
-    enforce(Mix_AllocateChannels(16) != -1, "Could not allocate audio channels.");
+            1024) != -1, "aucune sortie audio de connectée");
+    enforce(Mix_AllocateChannels(16) != -1, "l'allocation de canaux audio a échouée");
 
-    _width = CANVAS_WIDTH; // * 3;
-    _height = CANVAS_HEIGHT; // * 3;
-
-    enforce(SDL_CreateWindowAndRenderer(_width, _height,
+    enforce(SDL_CreateWindowAndRenderer(CANVAS_WIDTH, CANVAS_HEIGHT,
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_WINDOW_RESIZABLE,
-            &_sdlWindow, &_sdlRenderer) != -1, "Window initialization failed.");
+            &_sdlWindow, &_sdlRenderer) != -1, "l'initialization de la fenêtre a échouée");
 
     _renderTexture = SDL_CreateTexture(_sdlRenderer, SDL_PIXELFORMAT_RGBA8888,
         SDL_TEXTUREACCESS_TARGET, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -455,8 +597,8 @@ void createWindow() {
 }
 
 /// Cleanup the application window.
-void destroyWindow() {
-    //destroyControllers();
+private void _destroyWindow() {
+    //_closeControllers();
 
     if (_renderTexture !is null)
         SDL_DestroyTexture(_renderTexture);
@@ -487,9 +629,9 @@ void setWindowIcon(string path) {
 }
 
 /// Render everything on screen.
-void renderWindow() {
+private void _renderWindow() {
     SDL_SetRenderTarget(_sdlRenderer, _renderTexture);
-    SDL_Rect destRect = {0, 0, _width, _height};
+    SDL_Rect destRect = {0, 0, CANVAS_WIDTH, CANVAS_HEIGHT};
 
     { //Test
         SDL_SetRenderDrawColor(_sdlRenderer, 255, 255, 25, 255);
