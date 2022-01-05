@@ -309,16 +309,35 @@ private struct Controller {
 
 private {
     shared bool _isRunning = false;
-
-    SDL_Window* _sdlWindow;
-    SDL_Renderer* _sdlRenderer;
-    SDL_Texture* _renderTexture;
-
-    SDL_Surface* _icon;
-
-    float _deltatime = 1f;
-    float _currentFps;
     long _tickStartFrame;
+
+    // Rendu
+    SDL_Window* _window;
+    SDL_Renderer* _renderer;
+    SDL_Texture* _screenBuffer;
+    SDL_Surface* _icon;
+    ubyte[CANVAS_HEIGHT][CANVAS_WIDTH] _screen;
+
+    uint[16] _palette = [
+        0x000000,
+        0x1D2B53,
+        0x7E2553,
+        0x008751,
+        0xAB5236,
+        0x5F574F,
+        0xC2C3C7,
+        0xFFF1E8,
+        0xFF004D,
+        0xFFA300,
+        0xFFEC27,
+        0x00E436,
+        0x29ADFF,
+        0x83769C,
+        0xFF77A8,
+        0xFFCCAA
+    ];
+
+    int _clipX1, _clipY1, _clipX2 = CANVAS_WIDTH, _clipY2 = CANVAS_HEIGHT;
 
     // Entrées
     Controller[] _controllers;
@@ -462,59 +481,59 @@ void removeController(int joystickId) {
 
 /// Récupère les différents événements clavier et de la fenêtre.
 private bool _fetchEvents() {
-    SDL_Event sdlEvent;
+    SDL_Event event;
 
     if (!_isRunning) {
         _destroyWindow();
         return false;
     }
 
-    while (SDL_PollEvent(&sdlEvent)) {
-        switch (sdlEvent.type) {
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
         case SDL_QUIT:
             _isRunning = false;
             _destroyWindow();
             return false;
         case SDL_KEYDOWN:
-            if (sdlEvent.key.keysym.scancode >= _keys1.length)
+            if (event.key.keysym.scancode >= _keys1.length)
                 break;
-            if (!sdlEvent.key.repeat) {
-                _keys1[sdlEvent.key.keysym.scancode] = true;
-                _keys2[sdlEvent.key.keysym.scancode] = true;
+            if (!event.key.repeat) {
+                _keys1[event.key.keysym.scancode] = true;
+                _keys2[event.key.keysym.scancode] = true;
             }
             break;
         case SDL_KEYUP:
-            if (sdlEvent.key.keysym.scancode >= _keys1.length)
+            if (event.key.keysym.scancode >= _keys1.length)
                 break;
-            _keys1[sdlEvent.key.keysym.scancode] = false;
-            _keys2[sdlEvent.key.keysym.scancode] = false;
+            _keys1[event.key.keysym.scancode] = false;
+            _keys2[event.key.keysym.scancode] = false;
             break;
         case SDL_CONTROLLERDEVICEADDED:
-            addController(sdlEvent.cdevice.which);
+            addController(event.cdevice.which);
             break;
         case SDL_CONTROLLERDEVICEREMOVED:
-            removeController(sdlEvent.cdevice.which);
+            removeController(event.cdevice.which);
             break;
         case SDL_CONTROLLERDEVICEREMAPPED:
             break;
         case SDL_CONTROLLERAXISMOTION:
-            if (sdlEvent.caxis.axis >= 0 && sdlEvent.caxis.axis <= ControllerAxis.max) {
-                if (value < 0)
-                    _axis[axis] = sdlEvent.caxis.value / 32_768f;
+            if (event.caxis.axis >= 0 && event.caxis.axis <= ControllerAxis.max) {
+                if (event.caxis.value < 0)
+                    _axis[event.caxis.axis] = event.caxis.value / 32_768f;
                 else
-                    _axis[axis] = sdlEvent.caxis.value / 32_767f;
+                    _axis[event.caxis.axis] = event.caxis.value / 32_767f;
             }
             break;
         case SDL_CONTROLLERBUTTONDOWN:
-            if (sdlEvent.cbutton.button <= ControllerButton.max) {
-                _buttons1[sdlEvent.cbutton.button] = true;
-                _buttons2[sdlEvent.cbutton.button] = true;
+            if (event.cbutton.button <= ControllerButton.max) {
+                _buttons1[event.cbutton.button] = true;
+                _buttons2[event.cbutton.button] = true;
             }
             break;
         case SDL_CONTROLLERBUTTONUP:
-            if (sdlEvent.cbutton.button <= ControllerButton.max) {
-                _buttons1[sdlEvent.cbutton.button] = false;
-                _buttons2[sdlEvent.cbutton.button] = false;
+            if (event.cbutton.button <= ControllerButton.max) {
+                _buttons1[event.cbutton.button] = false;
+                _buttons2[event.cbutton.button] = false;
             }
             break;
         default:
@@ -586,12 +605,12 @@ private void _initWindow() {
 
     enforce(SDL_CreateWindowAndRenderer(CANVAS_WIDTH, CANVAS_HEIGHT,
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_WINDOW_RESIZABLE,
-            &_sdlWindow, &_sdlRenderer) != -1, "l'initialization de la fenêtre a échouée");
+            &_window, &_renderer) != -1, "l'initialization de la fenêtre a échouée");
 
-    _renderTexture = SDL_CreateTexture(_sdlRenderer, SDL_PIXELFORMAT_RGBA8888,
-        SDL_TEXTUREACCESS_TARGET, CANVAS_WIDTH, CANVAS_HEIGHT);
+    _screenBuffer = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_STREAMING, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    SDL_RenderSetLogicalSize(_sdlRenderer, CANVAS_WIDTH, CANVAS_HEIGHT);
+    SDL_RenderSetLogicalSize(_renderer, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     setWindowTitle("Brume");
 }
@@ -600,21 +619,21 @@ private void _initWindow() {
 private void _destroyWindow() {
     //_closeControllers();
 
-    if (_renderTexture !is null)
-        SDL_DestroyTexture(_renderTexture);
+    if (_screenBuffer !is null)
+        SDL_DestroyTexture(_screenBuffer);
 
-    if (_sdlWindow)
-        SDL_DestroyWindow(_sdlWindow);
+    if (_window)
+        SDL_DestroyWindow(_window);
 
-    if (_sdlRenderer)
-        SDL_DestroyRenderer(_sdlRenderer);
+    if (_renderer)
+        SDL_DestroyRenderer(_renderer);
 
     Mix_CloseAudio();
 }
 
 /// Change the actual window title.
 void setWindowTitle(string title) {
-    SDL_SetWindowTitle(_sdlWindow, toStringz(title));
+    SDL_SetWindowTitle(_window, toStringz(title));
 }
 
 /// Change the icon displayed.
@@ -625,24 +644,104 @@ void setWindowIcon(string path) {
     }
     _icon = IMG_Load(toStringz(path));
 
-    SDL_SetWindowIcon(_sdlWindow, _icon);
+    SDL_SetWindowIcon(_window, _icon);
 }
 
 /// Render everything on screen.
 private void _renderWindow() {
-    SDL_SetRenderTarget(_sdlRenderer, _renderTexture);
-    SDL_Rect destRect = {0, 0, CANVAS_WIDTH, CANVAS_HEIGHT};
+    uint* pixels;
+    int pitch;
+    if (SDL_LockTexture(_screenBuffer, null, cast(void**)&pixels, &pitch) == 0) {
+        for (ubyte y; y < CANVAS_HEIGHT; ++y) {
+            for (ubyte x; x < CANVAS_WIDTH; ++x) {
+                ubyte colorId = _screen[x][y];
+                pixels[y * CANVAS_WIDTH + x] = _palette[colorId];
+            }
+        }
+        SDL_UnlockTexture(_screenBuffer);
+    }
+    else {
+        import std.stdio;
 
-    { //Test
-        SDL_SetRenderDrawColor(_sdlRenderer, 255, 255, 25, 255);
-        const SDL_Rect rect = {5, 5, 1, 1};
-        SDL_RenderFillRect(_sdlRenderer, &rect);
+        writeln("erreur: ", fromStringz(SDL_GetError()));
     }
 
-    SDL_SetRenderTarget(_sdlRenderer, null);
-
-    SDL_RenderCopy(_sdlRenderer, _renderTexture, null,
+    SDL_Rect destRect = {0, 0, CANVAS_WIDTH, CANVAS_HEIGHT};
+    SDL_RenderCopy(_renderer, _screenBuffer, null,
         &destRect);
 
-    SDL_RenderPresent(_sdlRenderer);
+    SDL_RenderPresent(_renderer);
+}
+
+private void clipScreen(int x, int y, int w, int h) {
+    import std.algorithm.comparison : min, max;
+
+    _clipX1 = max(min(x, CANVAS_WIDTH), 0);
+    _clipY1 = max(min(y, CANVAS_HEIGHT), 0);
+    _clipX2 = max(min(x + w, CANVAS_WIDTH), 0);
+    _clipY2 = max(min(y + h, CANVAS_HEIGHT), 0);
+
+    if (_clipX1 > _clipX2) {
+        const int tmp = _clipX2;
+        _clipX2 = _clipX1;
+        _clipX1 = tmp;
+    }
+    if (_clipY1 > _clipY2) {
+        const int tmp = _clipY2;
+        _clipY2 = _clipY1;
+        _clipY1 = tmp;
+    }
+}
+
+void clearScreen(int c) {
+    if (c < 0 || c >= PALETTE_SIZE)
+        return;
+    for (int y = _clipY1; y < (_clipY1 + _clipY2); ++y) {
+        for (int x = _clipX1; x < (_clipX1 + _clipX2); ++x) {
+            _screen[x][y] = cast(ubyte) c;
+        }
+    }
+}
+
+void drawPixel(int x, int y, int c) {
+    if (x < 0 || y < 0 || x >= CANVAS_WIDTH || y >= CANVAS_HEIGHT || c < 0 || c >= PALETTE_SIZE)
+        return;
+    _screen[x][y] = cast(ubyte) c;
+}
+
+void drawRect(int x1, int y1, int x2, int y2, int c) {
+    import std.algorithm.comparison : min, max;
+
+    if (c < 0 || c >= PALETTE_SIZE)
+        return;
+    x1 = max(x1, _clipX1);
+    y1 = max(y1, _clipY1);
+    x2 = min(x2, _clipX2);
+    y2 = min(y2, _clipY2);
+
+    for (int y = y1; y <= y2; ++y) {
+        _screen[x1][y] = cast(ubyte) c;
+        _screen[x2][y] = cast(ubyte) c;
+    }
+    for (int x = x1; x <= x2; ++x) {
+        _screen[x][y1] = cast(ubyte) c;
+        _screen[x][y2] = cast(ubyte) c;
+    }
+}
+
+void drawFilledRect(int x1, int y1, int x2, int y2, int c) {
+    import std.algorithm.comparison : min, max;
+
+    if (c < 0 || c >= PALETTE_SIZE)
+        return;
+    x1 = max(x1, _clipX1);
+    y1 = max(y1, _clipY1);
+    x2 = min(x2, _clipX2);
+    y2 = min(y2, _clipY2);
+
+    for (int y = y1; y <= y2; ++y) {
+        for (int x = x1; x <= x2; ++x) {
+            _screen[x][y] = cast(ubyte) c;
+        }
+    }
 }
