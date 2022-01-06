@@ -1,4 +1,4 @@
-action main() {
+action programme() {
 /*
     nettoie(15);
 région(5, 5, 100, 100);
@@ -10,11 +10,6 @@ région(5, 5, 100, 100);
     cercle(25, 25, 10, vrai);
 région();*/
 
-    /*
-@TODO: ligne() ne fonctionne pas pour les 
-lignes horizontales et verticales
-    */
-
     /*ligne(100, 100, 150, 100, 3);
     ligne(10, 5, 10, 80, 2);
     ligne(50, 90, 2);
@@ -22,20 +17,38 @@ lignes horizontales et verticales
     ligne(60, 20, 2);
     ligne(10, 5, 2);*/
 
-int t = 0;
+    ent t = 0;
+
+    ent x, y;
     boucle {
-        nettoie(0);
-        if(t < 30) {
-            triangle(10, 10, 45, 15, 15, 50, false, 5);
+        /*nettoie(0);
+        si (t < 30) {
+            triangle(10, 10, 45, 15, 15, 50, faux, 5);
         }
-        else {
-            triangle(10, 10, 45, 15, 15, 50, true, 5);
+        sinon {
+            triangle(10, 10, 45, 15, 15, 50, vrai, 5);
         }
 
         t ++;
-        if(t >= 60) {
+        si (t >= 60) {
             t = 0;
+        }*/
+
+        si (Bouton.haut:appuyé?) {
+            y --;
         }
+        si (Bouton.bas:appuyé?) {
+            y ++;
+        }
+        si (Bouton.gauche:appuyé?) {
+            x --;
+        }
+        si (Bouton.droite:appuyé?) {
+            x ++;
+        }
+
+        nettoie(1);
+        point(x, y, 5);
         cède
     }
 }

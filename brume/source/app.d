@@ -1,9 +1,9 @@
 import std.stdio;
-import brume.screen;
+import brume.core;
 
 void main() {
     try {
-        runApplication();
+        startup();
     }
     catch (Exception e) {
         writeln(e.msg);

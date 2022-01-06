@@ -1,7 +1,7 @@
 module brume.script.graphics;
 
 import grimoire;
-import brume.constants, brume.screen;
+import brume.constants, brume.core;
 
 void loadGraphicsLibrary(GrLibrary library) {
     library.addPrimitive(&_color, "couleur", [grInt]);

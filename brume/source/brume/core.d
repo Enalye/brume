@@ -3,7 +3,7 @@
  * License: Zlib
  * Authors: Enalye
  */
-module brume.screen;
+module brume.core;
 
 import std.stdio;
 import std.string;
@@ -545,12 +545,17 @@ private bool _fetchEvents() {
 }
 
 /// Main application loop
-void runApplication() {
+void startup() {
+    version (Windows) {
+        import core.sys.windows.windows : SetConsoleOutputCP;
+
+        SetConsoleOutputCP(65_001);
+    }
     _initWindow();
 
     signal(SIGINT, &_signalHandler);
     _isRunning = true;
-    //_openControllers();
+    _openControllers();
 
     _tickStartFrame = Clock.currStdTime();
 
@@ -561,7 +566,7 @@ void runApplication() {
     GrCompiler compiler = new GrCompiler;
     compiler.addLibrary(stdlib);
     compiler.addLibrary(brumelib);
-    GrBytecode bytecode = compiler.compileFile("script/main.gr", GrOption.none);
+    GrBytecode bytecode = compiler.compileFile("script/main.gr", GrOption.none, GrLocale.fr_FR);
     if (!bytecode)
         throw new Exception(compiler.getError().prettify());
 
@@ -570,12 +575,10 @@ void runApplication() {
     _engine.addLibrary(brumelib);
     _engine.load(bytecode);
 
-    if (_engine.hasAction("main"))
-        _engine.callAction("main");
+    if (_engine.hasAction("programme"))
+        _engine.callAction("programme");
 
     while (_fetchEvents()) {
-        //updateControllers(deltaTime);
-
         if (_engine.hasCoroutines)
             _engine.process();
 
@@ -617,7 +620,7 @@ private void _initWindow() {
 
 /// Cleanup the application window.
 private void _destroyWindow() {
-    //_closeControllers();
+    _closeControllers();
 
     if (_screenBuffer !is null)
         SDL_DestroyTexture(_screenBuffer);
