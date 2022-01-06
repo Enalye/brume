@@ -337,7 +337,7 @@ private {
         0xFFCCAA
     ];
 
-    int _clipX1, _clipY1, _clipX2 = CANVAS_WIDTH, _clipY2 = CANVAS_HEIGHT;
+    int _clipX1, _clipY1, _clipX2 = CANVAS_WIDTH - 1, _clipY2 = CANVAS_HEIGHT - 1;
 
     // Entrées
     Controller[] _controllers;
@@ -349,7 +349,7 @@ private {
     GrEngine _engine;
 }
 
-/// Vérifie si la touche associée à l'id est pressée. \
+/// Vérifie if la touche associée à l'id est pressée. \
 /// Ne remet pas la touche à zéro.
 bool isButtonDown(KeyButton button) {
     return _keys1[button];
@@ -360,7 +360,7 @@ bool isButtonDown(ControllerButton button) {
     return _buttons1[button];
 }
 
-/// Vérifie si la touche associée à l'id est pressée. \
+/// Vérifie if la touche associée à l'id est pressée. \
 /// Remet la touche à zéro.
 bool getButtonDown(KeyButton button) {
     const bool value = _keys2[button];
@@ -673,13 +673,13 @@ private void _renderWindow() {
     SDL_RenderPresent(_renderer);
 }
 
-private void clipScreen(int x, int y, int w, int h) {
+void clipScreen(int x, int y, int w, int h) {
     import std.algorithm.comparison : min, max;
 
-    _clipX1 = max(min(x, CANVAS_WIDTH), 0);
-    _clipY1 = max(min(y, CANVAS_HEIGHT), 0);
-    _clipX2 = max(min(x + w, CANVAS_WIDTH), 0);
-    _clipY2 = max(min(y + h, CANVAS_HEIGHT), 0);
+    _clipX1 = max(min(x, CANVAS_WIDTH - 1), 0);
+    _clipY1 = max(min(y, CANVAS_HEIGHT - 1), 0);
+    _clipX2 = max(min(x + w, CANVAS_WIDTH - 1), 0);
+    _clipY2 = max(min(y + h, CANVAS_HEIGHT - 1), 0);
 
     if (_clipX1 > _clipX2) {
         const int tmp = _clipX2;
@@ -704,7 +704,13 @@ void clearScreen(int c) {
 }
 
 void drawPixel(int x, int y, int c) {
-    if (x < 0 || y < 0 || x >= CANVAS_WIDTH || y >= CANVAS_HEIGHT || c < 0 || c >= PALETTE_SIZE)
+    if (x < _clipX1 || y < _clipY1 || x > _clipX2 || y >= _clipY2 || c < 0 || c >= PALETTE_SIZE)
+        return;
+    _screen[x][y] = cast(ubyte) c;
+}
+
+private void _drawPixel(int x, int y, int c) {
+    if (x < _clipX1 || y < _clipY1 || x > _clipX2 || y >= _clipY2)
         return;
     _screen[x][y] = cast(ubyte) c;
 }
@@ -744,4 +750,541 @@ void drawFilledRect(int x1, int y1, int x2, int y2, int c) {
             _screen[x][y] = cast(ubyte) c;
         }
     }
+}
+
+void drawCircle(int xc, int yc, int r, int c) {
+    import std.algorithm.comparison : min, max;
+
+    if (c < 0 || c >= PALETTE_SIZE)
+        return;
+
+    int x = 0;
+    int y = r;
+    int d = r - 1;
+
+    while (y >= x) {
+        drawPixel(xc + x, yc + y, c);
+        drawPixel(xc + y, yc + x, c);
+        drawPixel(xc - x, yc + y, c);
+        drawPixel(xc - y, yc + x, c);
+        drawPixel(xc + x, yc - y, c);
+        drawPixel(xc + y, yc - x, c);
+        drawPixel(xc - x, yc - y, c);
+        drawPixel(xc - y, yc - x, c);
+
+        if (d >= 2 * x) {
+            d -= 2 * x + 1;
+            x++;
+        }
+        else if (d < 2 * (r - y)) {
+            d += 2 * y - 1;
+            y--;
+        }
+        else {
+            d += 2 * (y - x - 1);
+            y--;
+            x++;
+        }
+    }
+}
+
+void drawFilledCircle(int xc, int yc, int r, int c) {
+    import std.algorithm.comparison : min, max;
+
+    if (c < 0 || c >= PALETTE_SIZE)
+        return;
+
+    int x = 0;
+    int y = r;
+    int d = r - 1;
+
+    void drawColumn(int x, int y1, int y2, int c) {
+        for (; y1 <= y2; ++y1) {
+            drawPixel(x, y1, c);
+        }
+    }
+
+    while (y >= x) {
+        drawColumn(xc + x, yc - y, yc + y, c);
+        drawColumn(xc + y, yc - x, yc + x, c);
+        drawColumn(xc - x, yc - y, yc + y, c);
+        drawColumn(xc - y, yc - x, yc + x, c);
+
+        if (d >= 2 * x) {
+            d -= 2 * x + 1;
+            x++;
+        }
+        else if (d < 2 * (r - y)) {
+            d += 2 * y - 1;
+            y--;
+        }
+        else {
+            d += 2 * (y - x - 1);
+            y--;
+            x++;
+        }
+    }
+}
+
+void drawLine(int x1, int y1, int x2, int y2, int c) {
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+
+    if (dx == 0) {
+        if (dy > 0) {
+            for (; y1 <= y2; ++y1) {
+                _drawPixel(x1, y1, c);
+            }
+        }
+        else {
+            for (; y2 <= y1; ++y2) {
+                _drawPixel(x1, y2, c);
+            }
+        }
+    }
+    else if (dy == 0) {
+        if (dx > 0) {
+            for (; x1 <= x2; ++x1) {
+                _drawPixel(x1, y1, c);
+            }
+        }
+        else {
+            for (; x2 <= x1; ++x2) {
+                _drawPixel(x2, y1, c);
+            }
+        }
+    }
+    else if (dx != 0) {
+        if (dx > 0) {
+            if (dy != 0) {
+                if (dy > 0) {
+                    // vecteur oblique dans le 1er cadran
+                    if (dx >= dy) {
+                        // vecteur diagonal ou oblique proche de l’horizontale, dans le 1er octant
+                        int e;
+                        dx = (e = dx) * 2;
+                        dy = dy * 2; // e est positif
+                        for (;;) { // déplacements horizontaux
+                            _drawPixel(x1, y1, c);
+                            if ((x1 = x1 + 1) == x2)
+                                break;
+                            if ((e = e - dy) < 0) {
+                                y1 = y1 + 1; // déplacement diagonal
+                                e = e + dx;
+                            }
+                        }
+                    }
+                    else {
+                        // vecteur oblique proche de la verticale, dans le 2d octant
+                        int e;
+                        dy = (e = dy) * 2;
+                        dx = dx * 2; // e est positif
+                        for (;;) { // déplacements verticaux
+                            _drawPixel(x1, y1, c);
+                            if ((y1 = y1 + 1) == y2)
+                                break;
+                            if ((e == e - dx) < 0) {
+                                x1 = x1 + 1; // déplacement diagonal
+                                e = e + dy;
+                            }
+                        }
+                    }
+
+                }
+                else { // dy < 0 (et dx > 0)
+                    // vecteur oblique dans le 4e cadran
+                    if (dx >= -dy) {
+                        // vecteur diagonal ou oblique proche de l’horizontale, dans le 8e octant
+                        int e;
+                        dx = (e = dx) * 2;
+                        dy = dy * 2; // e est positif
+                        for (;;) { // déplacements horizontaux
+                            _drawPixel(x1, y1, c);
+                            if ((x1 = x1 + 1) == x2)
+                                break;
+                            if ((e = e + dy) < 0) {
+                                y1 = y1 - 1; // déplacement diagonal
+                                e = e + dx;
+                            }
+                        }
+                    }
+                    else { // vecteur oblique proche de la verticale, dans le 7e octant
+                        int e;
+                        dy = (e = dy) * 2;
+                        dx = dx * 2; // e est négatif
+                        for (;;) { // déplacements verticaux
+                            _drawPixel(x1, y1, c);
+                            if ((y1 = y1 - 1) == y2)
+                                break;
+                            if ((e = e + dx) > 0) {
+                                x1 = x1 + 1; // déplacement diagonal
+                                e = e + dy;
+                            }
+                        }
+                    }
+
+                }
+            }
+            else { // dy == 0 (et dx > 0)
+                // vecteur horizontal vers la droite
+                do {
+                    _drawPixel(x1, y1, c);
+                }
+                while ((x1 = x1 + 1) == x2);
+
+            }
+        }
+        else { // dx < 0
+            if (dy != 0) {
+                if (dy > 0) {
+                    // vecteur oblique dans le 2d cadran
+
+                    if (-dx >= dy) {
+                        // vecteur diagonal ou oblique proche de l’horizontale, dans le 4e octant
+                        int e;
+                        dx = (e = dx) * 2;
+                        dy = dy * 2; // e est négatif
+                        for (;;) { // déplacements horizontaux
+                            drawPixel(x1, y1, c);
+                            if ((x1 = x1 - 1) == x2)
+                                break;
+                            if ((e = e + dy) >= 0) {
+                                y1 = y1 + 1; // déplacement diagonal
+                                e = e + dx;
+                            }
+                        }
+                    }
+                    else {
+                        // vecteur oblique proche de la verticale, dans le 3e octant
+                        int e;
+                        dy = (e = dy) * 2;
+                        dx = dx * 2; // e est positif
+                        for (;;) { // déplacements verticaux
+                            drawPixel(x1, y1, c);
+                            if ((y1 = y1 + 1) == y2)
+                                break;
+                            if ((e = e + dx) <= 0) {
+                                x1 = x1 - 1; // déplacement diagonal
+                                e = e + dy;
+                            }
+                        }
+                    }
+
+                }
+                else { // dy < 0 (et dx < 0)
+                    // vecteur oblique dans le 3e cadran
+
+                    if (dx <= dy) {
+                        // vecteur diagonal ou oblique proche de l’horizontale, dans le 5e octant
+                        int e;
+                        dx = (e = dx) * 2;
+                        dy = dy * 2; // e est négatif
+                        for (;;) { // déplacements horizontaux
+                            drawPixel(x1, y1, c);
+                            if ((x1 = x1 - 1) == x2)
+                                break;
+                            if ((e = e - dy) >= 0) {
+                                y1 = y1 - 1; // déplacement diagonal
+                                e = e + dx;
+                            }
+                        }
+                    }
+                    else { // vecteur oblique proche de la verticale, dans le 6e octant
+                        int e;
+                        dy = (e = dy) * 2;
+                        dx = dx * 2; // e est négatif
+                        for (;;) { // déplacements verticaux
+                            drawPixel(x1, y1, c);
+                            if ((y1 = y1 - 1) == y2)
+                                break;
+                            if ((e = e - dx) >= 0) {
+                                x1 = x1 - 1; // déplacement diagonal
+                                e = e + dy;
+                            }
+                        }
+                    }
+
+                }
+            }
+            else { // dy = 0 (et dx < 0)
+
+                // vecteur horizontal vers la gauche
+                do {
+                    drawPixel(x1, y1, c);
+                }
+                while ((x1 = x1 - 1) == x2);
+
+            }
+        }
+    }
+    else {
+        if (dy != 0) {
+            if (dy > 0) {
+                // vecteur vertical croissant
+                do {
+                    drawPixel(x1, y1, c);
+                }
+                while ((y1 = y1 + 1) == y2);
+
+            }
+            else {
+                // vecteur vertical décroissant
+                do {
+                    drawPixel(x1, y1, c);
+                }
+                while ((y1 = y1 - 1) == y2);
+
+            }
+        }
+    }
+}
+
+void drawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, int c) {
+    import std.algorithm.comparison : min, max;
+
+    if (c < 0 || c >= PALETTE_SIZE)
+        return;
+
+    int yMin = min(y1, y2, y3);
+    int yMax = max(y1, y2, y3);
+
+    int[2][] line = _scanLine(x1, y1, x2, y2) ~ _scanLine(x2, y2, x3, y3) ~ _scanLine(x3, y3, x1, y1);
+    for (int y = yMin; y <= yMax; ++y) {
+        int xMin = int.max, xMax = int.min;
+        foreach (ref int[2] p; line) {
+            if (p[1] == y) {
+                if (xMin > p[0])
+                    xMin = p[0];
+                if (xMax < p[0])
+                    xMax = p[0];
+            }
+        }
+        for (; xMin <= xMax; ++xMin) {
+            _drawPixel(xMin, y, c);
+        }
+    }
+}
+
+void drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, int c) {
+    if (c < 0 || c >= PALETTE_SIZE)
+        return;
+
+    drawLine(x1, y1, x2, y2, c);
+    drawLine(x2, y2, x3, y3, c);
+    drawLine(x3, y3, x1, y1, c);
+}
+
+private int[2][] _scanLine(int x1, int y1, int x2, int y2) {
+    int[2][] result;
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+
+    if (dx == 0) {
+        if (dy > 0) {
+            for (; y1 <= y2; ++y1) {
+                result ~= [x1, y1];
+            }
+        }
+        else {
+            for (; y2 <= y1; ++y2) {
+                result ~= [x1, y2];
+            }
+        }
+    }
+    else if (dy == 0) {
+        if (dx > 0) {
+            for (; x1 <= x2; ++x1) {
+                result ~= [x1, y1];
+            }
+        }
+        else {
+            for (; x2 <= x1; ++x2) {
+                result ~= [x2, y1];
+            }
+        }
+    }
+    else if (dx != 0) {
+        if (dx > 0) {
+            if (dy != 0) {
+                if (dy > 0) {
+                    // vecteur oblique dans le 1er cadran
+                    if (dx >= dy) {
+                        // vecteur diagonal ou oblique proche de l’horizontale, dans le 1er octant
+                        int e;
+                        dx = (e = dx) * 2;
+                        dy = dy * 2; // e est positif
+                        for (;;) { // déplacements horizontaux
+                            result ~= [x1, y1];
+                            if ((x1 = x1 + 1) == x2)
+                                break;
+                            if ((e = e - dy) < 0) {
+                                y1 = y1 + 1; // déplacement diagonal
+                                e = e + dx;
+                            }
+                        }
+                    }
+                    else {
+                        // vecteur oblique proche de la verticale, dans le 2d octant
+                        int e;
+                        dy = (e = dy) * 2;
+                        dx = dx * 2; // e est positif
+                        for (;;) { // déplacements verticaux
+                            result ~= [x1, y1];
+                            if ((y1 = y1 + 1) == y2)
+                                break;
+                            if ((e == e - dx) < 0) {
+                                x1 = x1 + 1; // déplacement diagonal
+                                e = e + dy;
+                            }
+                        }
+                    }
+
+                }
+                else { // dy < 0 (et dx > 0)
+                    // vecteur oblique dans le 4e cadran
+                    if (dx >= -dy) {
+                        // vecteur diagonal ou oblique proche de l’horizontale, dans le 8e octant
+                        int e;
+                        dx = (e = dx) * 2;
+                        dy = dy * 2; // e est positif
+                        for (;;) { // déplacements horizontaux
+                            result ~= [x1, y1];
+                            if ((x1 = x1 + 1) == x2)
+                                break;
+                            if ((e = e + dy) < 0) {
+                                y1 = y1 - 1; // déplacement diagonal
+                                e = e + dx;
+                            }
+                        }
+                    }
+                    else { // vecteur oblique proche de la verticale, dans le 7e octant
+                        int e;
+                        dy = (e = dy) * 2;
+                        dx = dx * 2; // e est négatif
+                        for (;;) { // déplacements verticaux
+                            result ~= [x1, y1];
+                            if ((y1 = y1 - 1) == y2)
+                                break;
+                            if ((e = e + dx) > 0) {
+                                x1 = x1 + 1; // déplacement diagonal
+                                e = e + dy;
+                            }
+                        }
+                    }
+
+                }
+            }
+            else { // dy == 0 (et dx > 0)
+                // vecteur horizontal vers la droite
+                do {
+                    result ~= [x1, y1];
+                }
+                while ((x1 = x1 + 1) == x2);
+
+            }
+        }
+        else { // dx < 0
+            if (dy != 0) {
+                if (dy > 0) {
+                    // vecteur oblique dans le 2d cadran
+
+                    if (-dx >= dy) {
+                        // vecteur diagonal ou oblique proche de l’horizontale, dans le 4e octant
+                        int e;
+                        dx = (e = dx) * 2;
+                        dy = dy * 2; // e est négatif
+                        for (;;) { // déplacements horizontaux
+                            result ~= [x1, y1];
+                            if ((x1 = x1 - 1) == x2)
+                                break;
+                            if ((e = e + dy) >= 0) {
+                                y1 = y1 + 1; // déplacement diagonal
+                                e = e + dx;
+                            }
+                        }
+                    }
+                    else {
+                        // vecteur oblique proche de la verticale, dans le 3e octant
+                        int e;
+                        dy = (e = dy) * 2;
+                        dx = dx * 2; // e est positif
+                        for (;;) { // déplacements verticaux
+                            result ~= [x1, y1];
+                            if ((y1 = y1 + 1) == y2)
+                                break;
+                            if ((e = e + dx) <= 0) {
+                                x1 = x1 - 1; // déplacement diagonal
+                                e = e + dy;
+                            }
+                        }
+                    }
+
+                }
+                else { // dy < 0 (et dx < 0)
+                    // vecteur oblique dans le 3e cadran
+
+                    if (dx <= dy) {
+                        // vecteur diagonal ou oblique proche de l’horizontale, dans le 5e octant
+                        int e;
+                        dx = (e = dx) * 2;
+                        dy = dy * 2; // e est négatif
+                        for (;;) { // déplacements horizontaux
+                            result ~= [x1, y1];
+                            if ((x1 = x1 - 1) == x2)
+                                break;
+                            if ((e = e - dy) >= 0) {
+                                y1 = y1 - 1; // déplacement diagonal
+                                e = e + dx;
+                            }
+                        }
+                    }
+                    else { // vecteur oblique proche de la verticale, dans le 6e octant
+                        int e;
+                        dy = (e = dy) * 2;
+                        dx = dx * 2; // e est négatif
+                        for (;;) { // déplacements verticaux
+                            result ~= [x1, y1];
+                            if ((y1 = y1 - 1) == y2)
+                                break;
+                            if ((e = e - dx) >= 0) {
+                                x1 = x1 - 1; // déplacement diagonal
+                                e = e + dy;
+                            }
+                        }
+                    }
+
+                }
+            }
+            else { // dy = 0 (et dx < 0)
+
+                // vecteur horizontal vers la gauche
+                do {
+                    result ~= [x1, y1];
+                }
+                while ((x1 = x1 - 1) == x2);
+
+            }
+        }
+    }
+    else {
+        if (dy != 0) {
+            if (dy > 0) {
+                // vecteur vertical croissant
+                do {
+                    result ~= [x1, y1];
+                }
+                while ((y1 = y1 + 1) == y2);
+
+            }
+            else {
+                // vecteur vertical décroissant
+                do {
+                    result ~= [x1, y1];
+                }
+                while ((y1 = y1 - 1) == y2);
+
+            }
+        }
+    }
+    return result;
 }
