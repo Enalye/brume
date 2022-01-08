@@ -42,11 +42,30 @@ void loadGraphicsLibrary(GrLibrary library) {
     library.addPrimitive(&_triangle1, "triangle", [
             grInt, grInt, grInt, grInt, grInt, grInt, grBool, grInt
         ]);
+
+    library.addPrimitive(&_cursor0, "curseur");
+    library.addPrimitive(&_cursor1, "curseur", [
+            grInt, grInt
+        ]);
+
+    library.addPrimitive(&_print0, "écris", [
+            grString
+        ]);
+    library.addPrimitive(&_print1, "écris", [
+            grString, grInt
+        ]);
+    library.addPrimitive(&_print2, "écris", [
+            grString, grInt, grInt
+        ]);
+    library.addPrimitive(&_print3, "écris", [
+            grString, grInt, grInt, grInt
+        ]);
 }
 
 private {
     int _penColor;
     int _endPointX, _endPointY;
+    int _cursorX, _cursorY;
 }
 
 private void _color(GrCall call) {
@@ -154,4 +173,44 @@ private void _triangle1(GrCall call) {
     else
         drawTriangle(call.getInt32(0), call.getInt32(1), call.getInt32(2), call.getInt32(3), call.getInt32(4), call
                 .getInt32(5), _penColor);
+}
+
+private void _cursor0(GrCall call) {
+    _cursorX = 0;
+    _cursorY = 0;
+}
+
+private void _cursor1(GrCall call) {
+    _cursorX = call.getInt32(0);
+    _cursorY = call.getInt32(1);
+}
+
+private void _print0(GrCall call) {
+    GrString text = call.getString(0);
+    printText(text, _cursorX, _cursorY, _penColor);
+    _cursorY += FONT_LINE;
+}
+
+private void _print1(GrCall call) {
+    GrString text = call.getString(0);
+    _penColor = call.getInt32(1);
+    printText(text, _cursorX, _cursorY, _penColor);
+    _cursorY += FONT_LINE;
+}
+
+private void _print2(GrCall call) {
+    GrString text = call.getString(0);
+    _cursorX = call.getInt32(2);
+    _cursorY = call.getInt32(3);
+    printText(text, _cursorX, _cursorY, _penColor);
+    _cursorY += FONT_LINE;
+}
+
+private void _print3(GrCall call) {
+    GrString text = call.getString(0);
+    _cursorX = call.getInt32(2);
+    _cursorY = call.getInt32(3);
+    _penColor = call.getInt32(4);
+    printText(text, _cursorX, _cursorY, _penColor);
+    _cursorY += FONT_LINE;
 }

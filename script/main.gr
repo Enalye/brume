@@ -18,10 +18,10 @@ région();*/
     ligne(10, 5, 2);*/
 
     ent t = 0;
-
-    ent x, y;
-    boucle {
-        /*nettoie(0);
+    écris("Bonjour", 5);
+    écris("Céèêomment ça va", 5);
+    /*boucle {
+        nettoie(0);
         si (t < 30) {
             triangle(10, 10, 45, 15, 15, 50, faux, 5);
         }
@@ -32,8 +32,18 @@ région();*/
         t ++;
         si (t >= 60) {
             t = 0;
-        }*/
+        }
 
+        
+
+        cède
+    }*/
+}
+
+fonction dessin() {
+    ent x, y;
+    nettoie(0);
+    boucle {
         si (Bouton.haut:appuyé?) {
             y --;
         }
@@ -46,9 +56,12 @@ région();*/
         si (Bouton.droite:appuyé?) {
             x ++;
         }
-
-        nettoie(1);
-        point(x, y, 5);
+        si(Bouton.a:appuyé?) {
+            point(x, y, 1);
+        }
+        si(Bouton.b:appuyé?) {
+            point(x, y, 0);
+        }
         cède
     }
 }

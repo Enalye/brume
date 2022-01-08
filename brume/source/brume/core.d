@@ -22,8 +22,7 @@ version (Windows) {
 import bindbc.sdl, bindbc.sdl.image, bindbc.sdl.mixer;
 import grimoire;
 
-import brume.constants;
-import brume.script;
+import brume.constants, brume.script, brume.font;
 
 /// Liste des touches du clavier.
 enum KeyButton {
@@ -556,6 +555,8 @@ void startup() {
     signal(SIGINT, &_signalHandler);
     _isRunning = true;
     _openControllers();
+
+    initFont();
 
     _tickStartFrame = Clock.currStdTime();
 
@@ -1290,4 +1291,36 @@ private int[2][] _scanLine(int x1, int y1, int x2, int y2) {
         }
     }
     return result;
+}
+
+void drawArray(ulong value, int x, int y, int w, int h, int c) {
+    ulong mask = (cast(ulong) 0x1) << (w * h - 1);
+    for (int iy = y; iy < (y + h); ++iy) {
+        for (int ix = x; ix < (x + w); ++ix) {
+            if (value & mask) {
+                _drawPixel(ix, iy, c);
+            }
+            mask >>= 1;
+        }
+    }
+}
+
+void printText(string text, int x, int y, int c) {
+    import std.conv : to;
+
+    if (c < 0 || c >= PALETTE_SIZE)
+        return;
+
+    const dstring dtext = to!dstring(text);
+    foreach (ch; dtext) {
+        if (ch == ' ') {
+            x += FONT_ADVANCE;
+            continue;
+        }
+
+        const ulong glyph = getGlyphData(ch);
+        if (glyph)
+            drawArray(glyph, x, y, FONT_WIDTH, FONT_HEIGHT, c);
+        x += FONT_ADVANCE;
+    }
 }
