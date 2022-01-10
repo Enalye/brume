@@ -1,9 +1,11 @@
 module brume.script.graphics;
 
 import grimoire;
-import brume.constants, brume.core;
+import brume.constants, brume.core, brume.image;
 
 void loadGraphicsLibrary(GrLibrary library) {
+    GrType imgType = library.addForeign("Image");
+
     library.addPrimitive(&_color, "couleur", [grInt]);
 
     library.addPrimitive(&_clip0, "région");
@@ -60,6 +62,10 @@ void loadGraphicsLibrary(GrLibrary library) {
     library.addPrimitive(&_print3, "écris", [
             grString, grInt, grInt, grInt
         ]);
+
+    library.addPrimitive(&_makeImage, "Image", [grInt, grInt], [imgType]);
+    library.addPrimitive(&_setImage, "mets", [imgType, grIntList]);
+    library.addPrimitive(&_drawImage, "dessine", [imgType, grInt, grInt]);
 }
 
 private {
@@ -175,7 +181,7 @@ private void _triangle1(GrCall call) {
                 .getInt32(5), _penColor);
 }
 
-private void _cursor0(GrCall call) {
+private void _cursor0(GrCall) {
     _cursorX = 0;
     _cursorY = 0;
 }
@@ -213,4 +219,37 @@ private void _print3(GrCall call) {
     _penColor = call.getInt32(3);
     printText(text, _cursorX, _cursorY, _penColor);
     _cursorY += FONT_LINE;
+}
+
+private void _makeImage(GrCall call) {
+    call.setForeign!Image(new Image(call.getInt32(0), call.getInt32(1)));
+}
+
+private void _setImage(GrCall call) {
+    import std.algorithm.comparison : min;
+
+    Image img = call.getForeign!Image(0);
+    GrIntList values = call.getIntList(1);
+
+    if (!img) {
+        call.raise("Nul");
+        return;
+    }
+
+    const end = min(values.data.length, img._width * img._height);
+
+    for (int i; i < end; ++i) {
+        img._texels[i] = cast(ubyte) values.data[i];
+    }
+}
+
+private void _drawImage(GrCall call) {
+    Image img = call.getForeign!Image(0);
+
+    if (!img) {
+        call.raise("Nul");
+        return;
+    }
+
+    drawImage(img, call.getInt32(1), call.getInt32(2));
 }

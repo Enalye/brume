@@ -16,22 +16,26 @@ région();*/
     ligne(40, 30, 2);
     ligne(60, 20, 2);
     ligne(10, 5, 2);*/
-boucle {
+
     nettoie(7);
     rectangle(0, 0, 256, 13, vrai, 1);
-    ent t = 0;
-    écris("Bonjour", 0, 0, 5);
+    soit img = Image(8, 8);
+    img:mets([
+        1, 2, 3, 4, 5, 6, 7, 8,
+        1, 2, 3, 4, 5, 6, 7, 8,
+        1, 2, 3, 4, 5, 6, 7, 8,
+        1, 2, 3, 4, 5, 6, 7, 8,
+        1, 2, 3, 4, 5, 6, 7, 8,
+        1, 2, 3, 4, 5, 6, 7, 8,
+        1, 2, 3, 4, 5, 6, 7, 8,
+        1, 2, 3, 4, 5, 6, 7, 8,
+    ]);
+    img:dessine(20, 20);
 
-    écris("AÆÄÀÂÁBCÇĈDEÉÈÊËFGĜHĤIÍÌÎÏJĴ", 5);
-    écris("KLMNOŒÓÒÔÖPQRSŜTUÚÙÛŬÜVWXYZ", 5);
-    écris("aæäàâábcçĉdeéèêëfgĝhĥiíìîïjĵ", 5);
-    écris("klmnoœóòôöpqrsŝtuúùûŭüvwxyz…", 5);
-    écris("0123456789A; et 10°C ou 5,2%", 5);
-    écris("J’aime \«les\» licornes et leurs joli cornes,", 5);
-    écris("c’est (bien).")
-    écris("[Saucis]=ses: Lol?!+-", 5);
-    cède
-}
+//boucle {
+/*    cède
+}*/
+
     /*boucle {
         nettoie(0);
         si (t < 30) {

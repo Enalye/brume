@@ -22,7 +22,7 @@ version (Windows) {
 import bindbc.sdl, bindbc.sdl.image, bindbc.sdl.mixer;
 import grimoire;
 
-import brume.constants, brume.script, brume.font;
+import brume.constants, brume.script, brume.font, brume.image;
 
 /// Liste des touches du clavier.
 enum KeyButton {
@@ -1346,5 +1346,15 @@ void printText(string text, int x, int y, int c) {
             drawGlyph(glyph, x, y + descent + heightOffset, FONT_WIDTH - widthOffset, FONT_HEIGHT - heightOffset, c);
         }
         x += FONT_ADVANCE - widthOffset;
+    }
+}
+
+void drawImage(Image image, int x, int y) {
+    int i;
+    for (int iy; iy < image._height; ++iy) {
+        for (int ix; ix < image._width; ++ix) {
+            _drawPixel(x + ix, y + iy, image._texels[i]);
+            i ++;
+        }
     }
 }
