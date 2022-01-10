@@ -200,17 +200,17 @@ private void _print1(GrCall call) {
 
 private void _print2(GrCall call) {
     GrString text = call.getString(0);
-    _cursorX = call.getInt32(2);
-    _cursorY = call.getInt32(3);
+    _cursorX = call.getInt32(1);
+    _cursorY = call.getInt32(2);
     printText(text, _cursorX, _cursorY, _penColor);
     _cursorY += FONT_LINE;
 }
 
 private void _print3(GrCall call) {
     GrString text = call.getString(0);
-    _cursorX = call.getInt32(2);
-    _cursorY = call.getInt32(3);
-    _penColor = call.getInt32(4);
+    _cursorX = call.getInt32(1);
+    _cursorY = call.getInt32(2);
+    _penColor = call.getInt32(3);
     printText(text, _cursorX, _cursorY, _penColor);
     _cursorY += FONT_LINE;
 }

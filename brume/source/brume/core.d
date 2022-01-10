@@ -319,6 +319,25 @@ private {
 
     uint[16] _palette = [
         0x000000,
+        0x2b335f,
+        0x7e2072,
+        0x19959c,
+        0x8b4852,
+        0x395c98,
+        0xa9c1ff,
+        0xeeeeee,
+        0xd4186c,
+        0xd38441,
+        0xe9c35b,
+        0x70c6a9,
+        0x7696de,
+        0xa3a3a3,
+        0xff9798,
+        0xedc7b0
+    ];
+
+    /*[
+        0x000000,
         0x1D2B53,
         0x7E2553,
         0x008751,
@@ -334,7 +353,7 @@ private {
         0x83769C,
         0xFF77A8,
         0xFFCCAA
-    ];
+    ];*/
 
     int _clipX1, _clipY1, _clipX2 = CANVAS_WIDTH - 1, _clipY2 = CANVAS_HEIGHT - 1;
 
@@ -656,10 +675,10 @@ private void _renderWindow() {
     uint* pixels;
     int pitch;
     if (SDL_LockTexture(_screenBuffer, null, cast(void**)&pixels, &pitch) == 0) {
-        for (ubyte y; y < CANVAS_HEIGHT; ++y) {
-            for (ubyte x; x < CANVAS_WIDTH; ++x) {
+        for (uint y; y < CANVAS_HEIGHT; ++y) {
+            for (uint x; x < CANVAS_WIDTH; ++x) {
                 ubyte colorId = _screen[x][y];
-                pixels[y * CANVAS_WIDTH + x] = _palette[colorId];
+                pixels[y * CANVAS_WIDTH + x] = (_palette[colorId] << 8);
             }
         }
         SDL_UnlockTexture(_screenBuffer);
@@ -700,8 +719,8 @@ void clipScreen(int x, int y, int w, int h) {
 void clearScreen(int c) {
     if (c < 0 || c >= PALETTE_SIZE)
         return;
-    for (int y = _clipY1; y < (_clipY1 + _clipY2); ++y) {
-        for (int x = _clipX1; x < (_clipX1 + _clipX2); ++x) {
+    for (int y = _clipY1; y <= _clipY2; ++y) {
+        for (int x = _clipX1; x <= _clipX2; ++x) {
             _screen[x][y] = cast(ubyte) c;
         }
     }
@@ -1294,7 +1313,7 @@ private int[2][] _scanLine(int x1, int y1, int x2, int y2) {
 }
 
 void drawArray(ulong value, int x, int y, int w, int h, int c) {
-    ulong mask = (cast(ulong) 0x1) << (w * h - 1);
+    ulong mask = 0x1L << (w * h + 7);
     for (int iy = y; iy < (y + h); ++iy) {
         for (int ix = x; ix < (x + w); ++ix) {
             if (value & mask) {
@@ -1319,8 +1338,13 @@ void printText(string text, int x, int y, int c) {
         }
 
         const ulong glyph = getGlyphData(ch);
-        if (glyph)
-            drawArray(glyph, x, y, FONT_WIDTH, FONT_HEIGHT, c);
-        x += FONT_ADVANCE;
+        int widthOffset, heightOffset, descent;
+        if (glyph) {
+            descent = (glyph & 0xC0) >> 6;
+            widthOffset = (glyph & 0x30) >> 4;
+            heightOffset = glyph & 0xF;
+            drawArray(glyph, x, y + descent + heightOffset, FONT_WIDTH - widthOffset, FONT_HEIGHT - heightOffset, c);
+        }
+        x += FONT_ADVANCE - widthOffset;
     }
 }
