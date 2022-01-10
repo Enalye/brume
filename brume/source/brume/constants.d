@@ -9,4 +9,4 @@ enum CONTROLLER_DEAD_ZONE = 0.35;
 enum FONT_WIDTH = 5;
 enum FONT_HEIGHT = 11;
 enum FONT_ADVANCE = 6;
-enum FONT_LINE = 16;
+enum FONT_LINE = 14;

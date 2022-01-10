@@ -1312,11 +1312,11 @@ private int[2][] _scanLine(int x1, int y1, int x2, int y2) {
     return result;
 }
 
-void drawArray(ulong value, int x, int y, int w, int h, int c) {
+void drawGlyph(ulong glyph, int x, int y, int w, int h, int c) {
     ulong mask = 0x1L << (w * h + 7);
     for (int iy = y; iy < (y + h); ++iy) {
         for (int ix = x; ix < (x + w); ++ix) {
-            if (value & mask) {
+            if (glyph & mask) {
                 _drawPixel(ix, iy, c);
             }
             mask >>= 1;
@@ -1343,7 +1343,7 @@ void printText(string text, int x, int y, int c) {
             descent = (glyph & 0xC0) >> 6;
             widthOffset = (glyph & 0x30) >> 4;
             heightOffset = glyph & 0xF;
-            drawArray(glyph, x, y + descent + heightOffset, FONT_WIDTH - widthOffset, FONT_HEIGHT - heightOffset, c);
+            drawGlyph(glyph, x, y + descent + heightOffset, FONT_WIDTH - widthOffset, FONT_HEIGHT - heightOffset, c);
         }
         x += FONT_ADVANCE - widthOffset;
     }
