@@ -1,22 +1,4 @@
 action programme() {
-/*
-    nettoie(15);
-région(5, 5, 100, 100);
-    nettoie(2);
-    couleur(12);
-    rectangle(1, 1, 3, 3, faux);
-    rectangle(6, 8, 12, 30, vrai);
-
-    cercle(25, 25, 10, vrai);
-région();*/
-
-    /*ligne(100, 100, 150, 100, 3);
-    ligne(10, 5, 10, 80, 2);
-    ligne(50, 90, 2);
-    ligne(40, 30, 2);
-    ligne(60, 20, 2);
-    ligne(10, 5, 2);*/
-
     nettoie(7);
     rectangle(0, 0, 256, 13, vrai, 1);
     soit img = Image(8, 8);
@@ -30,13 +12,9 @@ région();*/
         1, 2, 3, 4, 5, 6, 7, 8,
         1, 2, 3, 4, 5, 6, 7, 8,
     ]);
-    img:dessine(20, 20);
 
-//boucle {
-/*    cède
-}*/
-
-    /*boucle {
+    entier t;
+    boucle {
         nettoie(0);
         si (t < 30) {
             triangle(10, 10, 45, 15, 15, 50, faux, 5);
@@ -49,15 +27,13 @@ région();*/
         si (t >= 60) {
             t = 0;
         }
-
-        
-
-        cède
-    }*/
+        img:dessine(20, 20);
+        suspends
+    }
 }
 
 fonction dessin() {
-    ent x, y;
+    entier x, y;
     nettoie(0);
     boucle {
         si (Bouton.haut:appuyé?) {
@@ -78,11 +54,11 @@ fonction dessin() {
         si(Bouton.b:appuyé?) {
             point(x, y, 0);
         }
-        cède
+        suspends
     }
 }
 
-fonction écrisOmbre(chaîne texte, ent x, ent y, ent c) {
+fonction écrisOmbre(chaîne texte, entier x, entier y, entier c) {
     écris(texte, x, y + 1, 13);
     écris(texte, x, y, c);
 }

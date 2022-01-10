@@ -1,7 +1,23 @@
+/** 
+ * Copyright: Enalye
+ * License: Zlib
+ * Authors: Enalye
+ */
 module brume.font;
 
 import std.uni: toLower;
 
+/*
+Chaque glyphe est encodé sur 64 bits
+Par défaut, un glyphe fait 5×11 pixels
+Les 8 bits de poids faible servent à paramétrer le glyphe:
+- Les 4 premiers bits soustraient de leur valeur la hauteur du glyphe ;
+- Les 2 bits suivants soustraient de leur valeur la longueur du glyphe ;
+- Les 2 bits suivants décalent d’autant le glyphe vers le bas.
+
+Les 5×11=55 bits suivants (ou moins si la longueur ou largeur a été soustraite)
+décrivent l’activation du pixel ou non.
+*/
 private ulong[256] _font = [
     //Chiffres
     0b01110_10001_10011_10011_10101_11001_11001_10001_01110_00000010, //0
