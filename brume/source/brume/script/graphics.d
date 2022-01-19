@@ -55,21 +55,23 @@ void loadGraphicsLibrary(GrLibrary library) {
             grInt, grInt
         ]);
 
-    library.addPrimitive(&_print0, "écris", [
+    library.addPrimitive(&_print0, "affiche", [
             grString
         ]);
-    library.addPrimitive(&_print1, "écris", [
+    library.addPrimitive(&_print1, "affiche", [
             grString, grInt
         ]);
-    library.addPrimitive(&_print2, "écris", [
+    library.addPrimitive(&_print2, "affiche", [
             grString, grInt, grInt
         ]);
-    library.addPrimitive(&_print3, "écris", [
+    library.addPrimitive(&_print3, "affiche", [
             grString, grInt, grInt, grInt
         ]);
 
     library.addPrimitive(&_makeImage, "Image", [grInt, grInt], [imgType]);
-    library.addPrimitive(&_setImage, "mets", [imgType, grIntList]);
+    library.addPrimitive(&_setImage0, "mets", [imgType, grIntList]);
+    library.addPrimitive(&_setImage1, "mets", [imgType, grString]);
+    library.addPrimitive(&_setImage2, "mets", [imgType, grInt, grInt, grStringList]);
     library.addPrimitive(&_drawImage, "dessine", [imgType, grInt, grInt]);
 }
 
@@ -230,7 +232,7 @@ private void _makeImage(GrCall call) {
     call.setForeign!Image(new Image(call.getInt32(0), call.getInt32(1)));
 }
 
-private void _setImage(GrCall call) {
+private void _setImage0(GrCall call) {
     import std.algorithm.comparison : min;
 
     Image img = call.getForeign!Image(0);
@@ -244,7 +246,79 @@ private void _setImage(GrCall call) {
     const end = min(values.data.length, img._width * img._height);
 
     for (int i; i < end; ++i) {
-        img._texels[i] = cast(ubyte) values.data[i];
+        if(values.data[i] >= 0 && values.data[i] <= 15)
+            img._texels[i] = cast(ubyte) values.data[i];
+        else {
+            img._texels[i] = TRANSPARENCY_VALUE;
+        }
+    }
+}
+
+private void _setImage1(GrCall call) {
+    import std.algorithm.comparison : min;
+
+    Image img = call.getForeign!Image(0);
+    GrString values = call.getString(1);
+
+    if (!img) {
+        call.raise("Nul");
+        return;
+    }
+
+    const end = min(values.length, img._width * img._height);
+
+    for (int i; i < end; ++i) {
+        auto value = values[i];
+        if(value >= '0' && value <= '9') {
+            img._texels[i] = cast(ubyte) (value - '0');
+        }
+        else if(value >= 'a' && value <= 'f') {
+            img._texels[i] = cast(ubyte) ((value - 'a') + 10);
+        }
+        else if(value >= 'A' && value <= 'F') {
+            img._texels[i] = cast(ubyte) ((value - 'A') + 10);
+        }
+        else {
+            img._texels[i] = TRANSPARENCY_VALUE;
+        }
+    }
+}
+
+private void _setImage2(GrCall call) {
+    import std.algorithm.comparison : min;
+
+    Image img = call.getForeign!Image(0);
+    const int x = call.getInt32(1);
+    const int y = call.getInt32(2);
+    GrStringList values = call.getStringList(3);
+
+    if (!img) {
+        call.raise("Nul");
+        return;
+    }
+
+    const endY = min(values.data.length, img._height - y);
+    for (int iy; iy < endY; ++iy) {
+        GrString line = values.data[iy];
+        const endX = min(line.length, img._width - x);
+        for (int ix; ix < endX; ++ix) {
+            auto value = line[ix];
+            const int index = (iy + y) * img._height + (ix + x);
+            if(index < 0 || index >= img._texels.length)
+                continue;
+            if(value >= '0' && value <= '9') {
+                img._texels[index] = cast(ubyte) (value - '0');
+            }
+            else if(value >= 'a' && value <= 'f') {
+                img._texels[index] = cast(ubyte) ((value - 'a') + 10);
+            }
+            else if(value >= 'A' && value <= 'F') {
+                img._texels[index] = cast(ubyte) ((value - 'A') + 10);
+            }
+            else {
+                img._texels[index] = TRANSPARENCY_VALUE;
+            }
+        }
     }
 }
 

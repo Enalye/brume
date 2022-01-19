@@ -580,7 +580,7 @@ void startup() {
     _tickStartFrame = Clock.currStdTime();
 
     // Script
-    GrLibrary stdlib = grLoadStdLibrary();
+    GrLibrary stdlib = grLoadStdLibrary(GrLocale.fr_FR);
     GrLibrary brumelib = loadBrumeLibrary();
 
     GrCompiler compiler = new GrCompiler;
@@ -1353,7 +1353,8 @@ void drawImage(Image image, int x, int y) {
     int i;
     for (int iy; iy < image._height; ++iy) {
         for (int ix; ix < image._width; ++ix) {
-            _drawPixel(x + ix, y + iy, image._texels[i]);
+            if(image._texels[i] <= 15)
+                _drawPixel(x + ix, y + iy, image._texels[i]);
             i ++;
         }
     }

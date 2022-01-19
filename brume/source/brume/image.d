@@ -5,6 +5,8 @@
  */
 module brume.image;
 
+import brume.constants;
+
 final class Image {
     package {
         uint _width;
@@ -18,5 +20,7 @@ final class Image {
         _height = height_;
 
         _texels = new ubyte[](_width * _height);
+        for (uint i; i < _texels.length; ++i)
+            _texels[i] = TRANSPARENCY_VALUE;
     }
 }
