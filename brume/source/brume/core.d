@@ -586,7 +586,7 @@ void startup() {
     GrCompiler compiler = new GrCompiler;
     compiler.addLibrary(stdlib);
     compiler.addLibrary(brumelib);
-    GrBytecode bytecode = compiler.compileFile("script/main.gr", GrOption.none, GrLocale.fr_FR);
+    GrBytecode bytecode = compiler.compileFile("script/main.gr", GrOption.symbols, GrLocale.fr_FR);
     if (bytecode) {
         _engine = new GrEngine;
         _engine.addLibrary(stdlib);
@@ -631,8 +631,19 @@ void startup() {
             }
         }
 
-        if (_engine && _engine.hasTasks)
-            _engine.process();
+        if (_engine) {
+            if (_engine.hasTasks)
+                _engine.process();
+
+            if (_engine.isPanicking()) {
+                writeln("panique: " ~ _engine.panicMessage);
+                foreach (trace; _engine.stackTraces) {
+                    writeln("[", trace.pc, "] dans ", trace.name, " à ", trace.file,
+                        "(", trace.line, ",", trace.column, ")");
+                    _engine = null;
+                }
+            }
+        }
 
         _renderWindow();
 
