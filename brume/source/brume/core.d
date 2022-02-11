@@ -580,26 +580,58 @@ void startup() {
     _tickStartFrame = Clock.currStdTime();
 
     // Script
-    GrLibrary stdlib = grLoadStdLibrary(GrLocale.fr_FR);
+    GrLibrary stdlib = grLoadStdLibrary();
     GrLibrary brumelib = loadBrumeLibrary();
 
     GrCompiler compiler = new GrCompiler;
     compiler.addLibrary(stdlib);
     compiler.addLibrary(brumelib);
     GrBytecode bytecode = compiler.compileFile("script/main.gr", GrOption.none, GrLocale.fr_FR);
-    if (!bytecode)
-        throw new Exception(compiler.getError().prettify());
+    if (bytecode) {
+        _engine = new GrEngine;
+        _engine.addLibrary(stdlib);
+        _engine.addLibrary(brumelib);
+        _engine.load(bytecode);
 
-    _engine = new GrEngine;
-    _engine.addLibrary(stdlib);
-    _engine.addLibrary(brumelib);
-    _engine.load(bytecode);
-
-    if (_engine.hasAction("programme"))
-        _engine.callAction("programme");
+        if (_engine.hasEvent("onLoad"))
+            _engine.callEvent("onLoad");
+    }
+    else {
+        _engine = null;
+        writeln(compiler.getError().prettify());
+    }
 
     while (_fetchEvents()) {
-        if (_engine.hasCoroutines)
+        if (bytecode && getButtonDown(KeyButton.f5)) {
+            _engine = new GrEngine;
+            _engine.addLibrary(stdlib);
+            _engine.addLibrary(brumelib);
+            _engine.load(bytecode);
+
+            if (_engine.hasEvent("onLoad"))
+                _engine.callEvent("onLoad");
+        }
+        else if (getButtonDown(KeyButton.f6)) {
+            compiler = new GrCompiler;
+            compiler.addLibrary(stdlib);
+            compiler.addLibrary(brumelib);
+            bytecode = compiler.compileFile("script/main.gr", GrOption.none, GrLocale.fr_FR);
+            if (bytecode) {
+                _engine = new GrEngine;
+                _engine.addLibrary(stdlib);
+                _engine.addLibrary(brumelib);
+                _engine.load(bytecode);
+
+                if (_engine.hasEvent("onLoad"))
+                    _engine.callEvent("onLoad");
+            }
+            else {
+                _engine = null;
+                writeln(compiler.getError().prettify());
+            }
+        }
+
+        if (_engine && _engine.hasTasks)
             _engine.process();
 
         _renderWindow();
@@ -1353,9 +1385,9 @@ void drawImage(Image image, int x, int y) {
     int i;
     for (int iy; iy < image._height; ++iy) {
         for (int ix; ix < image._width; ++ix) {
-            if(image._texels[i] <= 15)
+            if (image._texels[i] <= 15)
                 _drawPixel(x + ix, y + iy, image._texels[i]);
-            i ++;
+            i++;
         }
     }
 }

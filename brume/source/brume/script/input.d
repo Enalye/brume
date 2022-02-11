@@ -9,11 +9,11 @@ import grimoire;
 import brume.constants, brume.core;
 
 void loadInputLibrary(GrLibrary library) {
-    GrType btnType = library.addEnum("Bouton", [
-            "haut", "bas", "gauche", "droite", "a", "b", "x", "y"
+    GrType btnType = library.addEnum("Button", [
+            "up", "down", "left", "right", "a", "b", "x", "y"
         ]);
-    library.addPrimitive(&_held, "maintenu?", [btnType], [grBool]);
-    library.addPrimitive(&_pressed, "appuyé?", [btnType], [grBool]);
+    library.addFunction(&_held, "held?", [btnType], [grBool]);
+    library.addFunction(&_pressed, "pressed?", [btnType], [grBool]);
 }
 
 enum ButtonType {

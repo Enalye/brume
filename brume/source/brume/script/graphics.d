@@ -11,68 +11,68 @@ import brume.constants, brume.core, brume.image;
 void loadGraphicsLibrary(GrLibrary library) {
     GrType imgType = library.addForeign("Image");
 
-    library.addPrimitive(&_color, "couleur", [grInt]);
+    library.addFunction(&_color, "color", [grInt]);
 
-    library.addPrimitive(&_clip0, "région");
-    library.addPrimitive(&_clip1, "région", [grInt, grInt, grInt, grInt]);
+    library.addFunction(&_clip0, "clip");
+    library.addFunction(&_clip1, "clip", [grInt, grInt, grInt, grInt]);
 
-    library.addPrimitive(&_clear0, "nettoie");
-    library.addPrimitive(&_clear1, "nettoie", [grInt]);
+    library.addFunction(&_clear0, "clear");
+    library.addFunction(&_clear1, "clear", [grInt]);
 
-    library.addPrimitive(&_pixel0, "point", [grInt, grInt]);
-    library.addPrimitive(&_pixel1, "point", [grInt, grInt, grInt]);
+    library.addFunction(&_pixel0, "pixel", [grInt, grInt]);
+    library.addFunction(&_pixel1, "pixel", [grInt, grInt, grInt]);
 
-    library.addPrimitive(&_rect0, "rectangle", [
+    library.addFunction(&_rect0, "rectangle", [
             grInt, grInt, grInt, grInt, grBool
         ]);
-    library.addPrimitive(&_rect1, "rectangle", [
+    library.addFunction(&_rect1, "rectangle", [
             grInt, grInt, grInt, grInt, grBool, grInt
         ]);
 
-    library.addPrimitive(&_circle0, "cercle", [
+    library.addFunction(&_circle0, "circle", [
             grInt, grInt, grInt, grBool
         ]);
-    library.addPrimitive(&_circle1, "cercle", [
+    library.addFunction(&_circle1, "circle", [
             grInt, grInt, grInt, grBool, grInt
         ]);
 
-    library.addPrimitive(&_line0, "ligne", [grInt, grInt]);
-    library.addPrimitive(&_line1, "ligne", [grInt, grInt, grInt]);
-    library.addPrimitive(&_line2, "ligne", [grInt, grInt, grInt, grInt]);
-    library.addPrimitive(&_line3, "ligne", [
+    library.addFunction(&_line0, "line", [grInt, grInt]);
+    library.addFunction(&_line1, "line", [grInt, grInt, grInt]);
+    library.addFunction(&_line2, "line", [grInt, grInt, grInt, grInt]);
+    library.addFunction(&_line3, "line", [
             grInt, grInt, grInt, grInt, grInt
         ]);
 
-    library.addPrimitive(&_triangle0, "triangle", [
+    library.addFunction(&_triangle0, "triangle", [
             grInt, grInt, grInt, grInt, grInt, grInt, grBool
         ]);
-    library.addPrimitive(&_triangle1, "triangle", [
+    library.addFunction(&_triangle1, "triangle", [
             grInt, grInt, grInt, grInt, grInt, grInt, grBool, grInt
         ]);
 
-    library.addPrimitive(&_cursor0, "curseur");
-    library.addPrimitive(&_cursor1, "curseur", [
+    library.addFunction(&_cursor0, "cursor");
+    library.addFunction(&_cursor1, "cursor", [
             grInt, grInt
         ]);
 
-    library.addPrimitive(&_print0, "affiche", [
+    library.addFunction(&_print0, "print", [
             grString
         ]);
-    library.addPrimitive(&_print1, "affiche", [
+    library.addFunction(&_print1, "print", [
             grString, grInt
         ]);
-    library.addPrimitive(&_print2, "affiche", [
+    library.addFunction(&_print2, "print", [
             grString, grInt, grInt
         ]);
-    library.addPrimitive(&_print3, "affiche", [
+    library.addFunction(&_print3, "print", [
             grString, grInt, grInt, grInt
         ]);
 
-    library.addPrimitive(&_makeImage, "Image", [grInt, grInt], [imgType]);
-    library.addPrimitive(&_setImage0, "mets", [imgType, grIntList]);
-    library.addPrimitive(&_setImage1, "mets", [imgType, grString]);
-    library.addPrimitive(&_setImage2, "mets", [imgType, grInt, grInt, grStringList]);
-    library.addPrimitive(&_drawImage, "dessine", [imgType, grInt, grInt]);
+    library.addFunction(&_makeImage, "Image", [grInt, grInt], [imgType]);
+    library.addFunction(&_setImage0, "set", [imgType, grIntArray]);
+    library.addFunction(&_setImage1, "set", [imgType, grString]);
+    library.addFunction(&_setImage2, "set", [imgType, grInt, grInt, grStringArray]);
+    library.addFunction(&_drawImage, "draw", [imgType, grInt, grInt]);
 }
 
 private {
@@ -236,7 +236,7 @@ private void _setImage0(GrCall call) {
     import std.algorithm.comparison : min;
 
     Image img = call.getForeign!Image(0);
-    GrIntList values = call.getIntList(1);
+    GrIntArray values = call.getIntArray(1);
 
     if (!img) {
         call.raise("Nul");
@@ -290,7 +290,7 @@ private void _setImage2(GrCall call) {
     Image img = call.getForeign!Image(0);
     const int x = call.getInt32(1);
     const int y = call.getInt32(2);
-    GrStringList values = call.getStringList(3);
+    GrStringArray values = call.getStringArray(3);
 
     if (!img) {
         call.raise("Nul");
