@@ -6,7 +6,7 @@
 module brume.constants;
 
 enum CANVAS_WIDTH = 256;
-enum CANVAS_HEIGHT = 192;
+enum CANVAS_HEIGHT = 256;
 enum FRAME_RATE = 30;
 enum PALETTE_SIZE = 16;
 enum TRANSPARENCY_VALUE = 0xFF;

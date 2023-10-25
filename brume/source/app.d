@@ -12,5 +12,8 @@ void main() {
     }
     catch (Exception e) {
         writeln(e.msg);
+        foreach (trace; e.info) {
+            writeln("at: ", trace);
+        }
     }
 }

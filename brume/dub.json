@@ -1,61 +1,86 @@
 {
-	"name": "brume",
-	"description": "Console Fantaisiste Brume",
-	"copyright": "Copyright © 2022, Enalye",
-	"authors": [
-		"Enalye"
-	],
-	"dependencies": {
-		"bindbc-sdl": "~>0.21.4",
-		"grimoire": {
-			"version": "~master",
-			"path": "../grimoire"
-		}
-	},
-	"versions": [
-		"SDL_202",
-		"SDL_Image_204",
-		"SDL_Mixer_204"
-	],
-	"targetName": "brume",
-	"targetType": "executable",
-	"workingDirectory": "..",
-	"buildTypes": {
-		"unittest": {
-			"buildOptions": ["unittests", "debugMode", "debugInfo"]
-		},
-		"debug": {
-			"buildOptions": ["debugMode", "debugInfo"]
-		},
-		"release": {
-			"buildOptions": ["releaseMode", "optimize", "inline", "noBoundsCheck"]
-		}
-	},
-	"configurations": [
-		{
-			"name": "linux-build",
-			"platforms": ["linux"],
-			"targetPath": "../bin",
-			"postBuildCommands": [
-				"cp ../lib$ARCH/*.dll ../bin"
-			]
-		},
-		{
-			"name": "windows-build",
-			"platforms": ["windows"],
-			"targetPath": "../bin$ARCH"
-		},
-		{
-			"name": "windows-release",
-			"platforms": ["windows"],
-			"targetPath": "../release$ARCH/brume",
-			"lflags":[
-				"-subsystem:windows",
-				"-entry:mainCRTStartup"
-			],
-			"postBuildCommands": [
-				"copy ..\\lib$ARCH\\*.dll ..\\release$ARCH\\brume"
-			]
-		}
-	]
+    "name": "brume",
+    "description": "Console Fantaisiste Brume",
+    "copyright": "Copyright © 2022, Enalye",
+    "authors": [
+        "Enalye"
+    ],
+    "dependencies": {
+        "bindbc-sdl": "~>1.4.2",
+        "grimoire": {
+            "path": "../grimoire"
+        }
+    },
+    "subConfigurations": {
+        "bindbc-sdl": "static"
+    },
+    "versions": [
+        "BindSDL_Static",
+        "SDL_2_26"
+    ],
+    "lflags-posix": [
+        "-L-L../libs/$PLATFORM/$ARCH/",
+        "-L-lz"
+    ],
+    "libs-posix": [
+        "SDL2"
+    ],
+    "libs-windows": [
+        "../libs/$PLATFORM/$ARCH/SDL2"
+    ],
+    "targetPath": "../bin",
+    "targetType": "executable",
+    "workingDirectory": "..",
+    "buildTypes": {
+        "unittest": {
+            "buildOptions": [
+                "unittests",
+                "debugMode",
+                "debugInfo"
+            ]
+        },
+        "debug": {
+            "buildOptions": [
+                "debugMode",
+                "debugInfo"
+            ]
+        },
+        "release": {
+            "buildOptions": [
+                "releaseMode",
+                "optimize",
+                "inline",
+                "noBoundsCheck"
+            ]
+        }
+    },
+    "configurations": [
+        {
+            "name": "linux-build",
+            "targetName": "brume-dbg",
+            "platforms": [
+                "linux"
+            ]
+        },
+        {
+            "name": "windows-build",
+            "targetName": "brume-dbg",
+            "dflags": ["-gf"],
+            "platforms": [
+                "windows"
+            ]
+        },
+        {
+            "name": "windows-release",
+            "targetName": "brume",
+            "targetPath": "../export",
+            "platforms": [
+                "windows"
+            ],
+            "lflags": [
+                "-subsystem:windows",
+                "-entry:mainCRTStartup"
+            ]
+        }
+    ]
 }

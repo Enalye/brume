@@ -1,3 +1,24 @@
+/*
+
+event onLoad() {
+
+    loop  {
+    clear(0);
+
+    print("0123456789AÁÀÂÄÆBCÇĈDEÉÈÊËFGĜHĤIÍÌÎÏJĴKLMN", 0, 0, 7);
+
+    print("OÓÒÔÖŒPQRSŜTUÚÙÛÜŬVWXYZ", 0, 15, 7);
+    print("aáàâäæbcçĉdeéèêëfgĝhĥiíìîïjĵk", 0, 30, 7);
+    print("lmnoóòôöœpqrsŝtuúùûüŭvwxyz", 0, 45, 7);
+    print("’.…,;:!?+-* /=≠()[]«»°%", 0, 60, 7);
+    yield
+    }
+    
+    //lmnoóòôöœpqrsŝtuúùûüŭvwxyz’.…,;:!?+-* /=≠()[]«»°%", 0, 0, 7);
+}*/
+
+
+/*
 int kills, deaths, grazes;
 event onLoad() {
     player();
@@ -168,11 +189,11 @@ task player() {
         circle(px, py, 2, true, 7);
         yield
     }
-}
+}*/
 
-/*event onLoad() {
-    let icon = Image(24, 24);
-    icon:set(0, 0, [
+event onLoad() {
+    var icon = Image(24, 24);
+    icon.set(0, 0, [
 " 0000000000000000000000 ",
 "022222222222222222222220",
 "022222222222222222222220",
@@ -199,12 +220,11 @@ task player() {
 " 0000000000000000000000 ",
     ]);
 
-    loop {
+    loop yield {
         clear(7);
         rectangle(0, 0, 256, 13, true, 1);
-        icon:draw(20, 20);
+        icon.draw(20, 20);
         print("Bonjour", 20, 50);
-        time() as string:print(0, 0, 7);
-        yield
+        time().print(0, 0, 7);
     }
-}*/
+}

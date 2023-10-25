@@ -19,7 +19,7 @@ version (Windows) {
     import core.stdc.signal;
 }
 
-import bindbc.sdl, bindbc.sdl.image, bindbc.sdl.mixer;
+import bindbc.sdl;
 import grimoire;
 
 import brume.constants, brume.script, brume.font, brume.image;
@@ -318,22 +318,9 @@ private {
     ubyte[CANVAS_HEIGHT][CANVAS_WIDTH] _screen;
 
     uint[16] _palette = [
-        0x000000,
-        0x2b335f,
-        0x7e2072,
-        0x19959c,
-        0x8b4852,
-        0x395c98,
-        0xa9c1ff,
-        0xeeeeee,
-        0xd4186c,
-        0xd38441,
-        0xe9c35b,
-        0x70c6a9,
-        0x7696de,
-        0xa3a3a3,
-        0xff9798,
-        0xedc7b0
+        0x000000, 0x2b335f, 0x7e2072, 0x19959c, 0x8b4852, 0x395c98, 0xa9c1ff,
+        0xeeeeee, 0xd4186c, 0xd38441, 0xe9c35b, 0x70c6a9, 0x7696de, 0xa3a3a3,
+        0xff9798, 0xedc7b0
     ];
 
     /*[
@@ -586,7 +573,9 @@ void startup() {
     GrCompiler compiler = new GrCompiler;
     compiler.addLibrary(stdlib);
     compiler.addLibrary(brumelib);
-    GrBytecode bytecode = compiler.compileFile("script/main.gr", GrOption.symbols, GrLocale.fr_FR);
+
+    compiler.addFile("script/main.gr");
+    GrBytecode bytecode = compiler.compile(GrOption.symbols, GrLocale.fr_FR);
     if (bytecode) {
         _engine = new GrEngine;
         _engine.addLibrary(stdlib);
@@ -598,7 +587,7 @@ void startup() {
     }
     else {
         _engine = null;
-        writeln(compiler.getError().prettify());
+        writeln(compiler.getError().prettify(GrLocale.fr_FR));
     }
 
     while (_fetchEvents()) {
@@ -615,7 +604,9 @@ void startup() {
             compiler = new GrCompiler;
             compiler.addLibrary(stdlib);
             compiler.addLibrary(brumelib);
-            bytecode = compiler.compileFile("script/main.gr", GrOption.none, GrLocale.fr_FR);
+            compiler.addFile("script/main.gr");
+
+            bytecode = compiler.compile(GrOption.none, GrLocale.fr_FR);
             if (bytecode) {
                 _engine = new GrEngine;
                 _engine.addLibrary(stdlib);
@@ -627,7 +618,7 @@ void startup() {
             }
             else {
                 _engine = null;
-                writeln(compiler.getError().prettify());
+                writeln(compiler.getError().prettify(GrLocale.fr_FR));
             }
         }
 
@@ -638,8 +629,8 @@ void startup() {
             if (_engine.isPanicking()) {
                 writeln("panique: " ~ _engine.panicMessage);
                 foreach (trace; _engine.stackTraces) {
-                    writeln("[", trace.pc, "] dans ", trace.name, " à ", trace.file,
-                        "(", trace.line, ",", trace.column, ")");
+                    writeln("[", trace.pc, "] dans ", trace.name, " à ",
+                        trace.file, "(", trace.line, ",", trace.column, ")");
                     _engine = null;
                 }
             }
@@ -658,16 +649,8 @@ void startup() {
 
 /// Create the application window.
 private void _initWindow() {
-    enforce(loadSDL() >= SDLSupport.sdl202);
-    enforce(loadSDLImage() >= SDLImageSupport.sdlImage200);
-    enforce(loadSDLMixer() >= SDLMixerSupport.sdlMixer200);
-
     enforce(SDL_Init(SDL_INIT_EVERYTHING) == 0,
         "la sdl n'a pas pu s'initialiser: " ~ fromStringz(SDL_GetError()));
-
-    enforce(Mix_OpenAudio(44_100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS,
-            1024) != -1, "aucune sortie audio de connectée");
-    enforce(Mix_AllocateChannels(16) != -1, "l'allocation de canaux audio a échouée");
 
     enforce(SDL_CreateWindowAndRenderer(CANVAS_WIDTH, CANVAS_HEIGHT,
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_WINDOW_RESIZABLE,
@@ -693,8 +676,6 @@ private void _destroyWindow() {
 
     if (_renderer)
         SDL_DestroyRenderer(_renderer);
-
-    Mix_CloseAudio();
 }
 
 /// Change the actual window title.
@@ -703,7 +684,7 @@ void setWindowTitle(string title) {
 }
 
 /// Change the icon displayed.
-void setWindowIcon(string path) {
+/*void setWindowIcon(string path) {
     if (_icon) {
         SDL_FreeSurface(_icon);
         _icon = null;
@@ -711,7 +692,7 @@ void setWindowIcon(string path) {
     _icon = IMG_Load(toStringz(path));
 
     SDL_SetWindowIcon(_window, _icon);
-}
+}*/
 
 /// Render everything on screen.
 private void _renderWindow() {
@@ -733,8 +714,7 @@ private void _renderWindow() {
     }
 
     SDL_Rect destRect = {0, 0, CANVAS_WIDTH, CANVAS_HEIGHT};
-    SDL_RenderCopy(_renderer, _screenBuffer, null,
-        &destRect);
+    SDL_RenderCopy(_renderer, _screenBuffer, null, &destRect);
 
     SDL_RenderPresent(_renderer);
 }
@@ -1114,7 +1094,8 @@ void drawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, int c) {
     int yMin = min(y1, y2, y3);
     int yMax = max(y1, y2, y3);
 
-    int[2][] line = _scanLine(x1, y1, x2, y2) ~ _scanLine(x2, y2, x3, y3) ~ _scanLine(x3, y3, x1, y1);
+    int[2][] line = _scanLine(x1, y1, x2, y2) ~ _scanLine(x2, y2, x3, y3) ~ _scanLine(x3,
+        y3, x1, y1);
     for (int y = yMin; y <= yMax; ++y) {
         int xMin = int.max, xMax = int.min;
         foreach (ref int[2] p; line) {
@@ -1386,7 +1367,8 @@ void printText(string text, int x, int y, int c) {
             descent = (glyph & 0xC0) >> 6;
             widthOffset = (glyph & 0x30) >> 4;
             heightOffset = glyph & 0xF;
-            drawGlyph(glyph, x, y + descent + heightOffset, FONT_WIDTH - widthOffset, FONT_HEIGHT - heightOffset, c);
+            drawGlyph(glyph, x, y + descent + heightOffset,
+                FONT_WIDTH - widthOffset, FONT_HEIGHT - heightOffset, c);
         }
         x += FONT_ADVANCE - widthOffset;
     }
