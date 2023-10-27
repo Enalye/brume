@@ -12,6 +12,8 @@ void loadInputLibrary(GrLibrary library) {
     GrType btnType = library.addEnum("Button", grNativeEnum!ButtonType);
     library.addFunction(&_held, "isHeld", [btnType], [grBool]);
     library.addFunction(&_pressed, "isPressed", [btnType], [grBool]);
+    library.addFunction(&_getMouseX, "getMouseX", [], [grInt]);
+    library.addFunction(&_getMouseY, "getMouseY", [], [grInt]);
 }
 
 enum ButtonType {
@@ -89,4 +91,12 @@ private void _pressed(GrCall call) {
         break;
     }
     call.setBool(value);
+}
+
+private void _getMouseX(GrCall call) {
+    call.setInt(getMouseX());
+}
+
+private void _getMouseY(GrCall call) {
+    call.setInt(getMouseY());
 }

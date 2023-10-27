@@ -1,8 +1,9 @@
+import "img.gr"
+
+event app() {
+    img();
 /*
-
-event onLoad() {
-
-    loop  {
+    loop yield {
     clear(0);
 
     print("0123456789AÁÀÂÄÆBCÇĈDEÉÈÊËFGĜHĤIÍÌÎÏJĴKLMN", 0, 0, 7);
@@ -11,11 +12,12 @@ event onLoad() {
     print("aáàâäæbcçĉdeéèêëfgĝhĥiíìîïjĵk", 0, 30, 7);
     print("lmnoóòôöœpqrsŝtuúùûüŭvwxyz", 0, 45, 7);
     print("’.…,;:!?+-* /=≠()[]«»°%", 0, 60, 7);
-    yield
-    }
+
+    print(getMouseX() ~ ", " ~ getMouseY());
+    }*/
     
     //lmnoóòôöœpqrsŝtuúùûüŭvwxyz’.…,;:!?+-* /=≠()[]«»°%", 0, 0, 7);
-}*/
+}
 
 
 /*
@@ -190,9 +192,9 @@ task player() {
         yield
     }
 }*/
-
-event onLoad() {
-    var icon = Image(24, 24);
+/*
+event app() {
+    var icon = @Image(24, 24);
     icon.set(0, 0, [
 " 0000000000000000000000 ",
 "022222222222222222222220",
@@ -225,6 +227,9 @@ event onLoad() {
         rectangle(0, 0, 256, 13, true, 1);
         icon.draw(20, 20);
         print("Bonjour", 20, 50);
+        color(1);
+        print("yooo");
+        print("yooo");
         time().print(0, 0, 7);
     }
-}
+}*/

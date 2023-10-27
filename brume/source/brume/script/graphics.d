@@ -68,7 +68,7 @@ void loadGraphicsLibrary(GrLibrary library) {
             grString, grInt, grInt, grInt
         ]);
 
-    library.addFunction(&_makeImage, "Image", [grInt, grInt], [imgType]);
+    library.addConstructor(&_makeImage, imgType, [grInt, grInt]);
     library.addFunction(&_setImage0, "set", [imgType, grList(grInt)]);
     library.addFunction(&_setImage1, "set", [imgType, grString]);
     library.addFunction(&_setImage2, "set", [imgType, grInt, grInt, grList(grString)]);

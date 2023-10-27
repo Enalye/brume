@@ -10,6 +10,7 @@ import std.string;
 import std.exception;
 import std.datetime.systime;
 import core.thread;
+import std.algorithm.comparison : clamp;
 
 version (linux) {
     import core.sys.posix.unistd;
@@ -346,6 +347,7 @@ private {
 
     // Entrées
     Controller[] _controllers;
+    int _mouseX, _mouseY;
     bool[KeyButton.max + 1] _keys1, _keys2;
     bool[ControllerButton.max + 1] _buttons1, _buttons2;
     float[ControllerAxis.max + 1] _axis = 0f;
@@ -383,6 +385,16 @@ bool getButtonDown(ControllerButton button) {
 /// Retourne la valeur actuelle de l'axe.
 float getAxis(ControllerAxis axis) {
     return _axis[axis];
+}
+
+/// Retourne la position de la souris.
+int getMouseX() {
+    return _mouseX;
+}
+
+///Ditto
+int getMouseY() {
+    return _mouseY;
 }
 
 /// Capture les interruptions.
@@ -499,6 +511,10 @@ private bool _fetchEvents() {
             _isRunning = false;
             _destroyWindow();
             return false;
+        case SDL_MOUSEMOTION:
+            _mouseX = clamp(event.motion.x, 0, CANVAS_WIDTH - 1);
+            _mouseY = clamp(event.motion.y, 0, CANVAS_HEIGHT - 1);
+            break;
         case SDL_KEYDOWN:
             if (event.key.keysym.scancode >= _keys1.length)
                 break;
@@ -582,8 +598,7 @@ void startup() {
         _engine.addLibrary(brumelib);
         _engine.load(bytecode);
 
-        if (_engine.hasEvent("onLoad"))
-            _engine.callEvent("onLoad");
+        _engine.callEvent("app");
     }
     else {
         _engine = null;
@@ -597,8 +612,7 @@ void startup() {
             _engine.addLibrary(brumelib);
             _engine.load(bytecode);
 
-            if (_engine.hasEvent("onLoad"))
-                _engine.callEvent("onLoad");
+            _engine.callEvent("app");
         }
         else if (getButtonDown(KeyButton.f6)) {
             compiler = new GrCompiler;
@@ -613,8 +627,7 @@ void startup() {
                 _engine.addLibrary(brumelib);
                 _engine.load(bytecode);
 
-                if (_engine.hasEvent("onLoad"))
-                    _engine.callEvent("onLoad");
+                _engine.callEvent("app");
             }
             else {
                 _engine = null;
