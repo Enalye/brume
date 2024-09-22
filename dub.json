@@ -8,7 +8,7 @@
     "dependencies": {
         "bindbc-sdl": "~>1.4.2",
         "grimoire": {
-            "path": "../grimoire"
+            "path": "grimoire"
         }
     },
     "subConfigurations": {
@@ -19,18 +19,18 @@
         "SDL_2_26"
     ],
     "lflags-posix": [
-        "-L-L../libs/$PLATFORM/$ARCH/",
+        "-L-Llibs/$PLATFORM/$ARCH/",
         "-L-lz"
     ],
     "libs-posix": [
         "SDL2"
     ],
     "libs-windows": [
-        "../libs/$PLATFORM/$ARCH/SDL2"
+        "libs/$PLATFORM/$ARCH/SDL2"
     ],
-    "targetPath": "../bin",
+    "targetPath": "bin",
     "targetType": "executable",
-    "workingDirectory": "..",
+    "workingDirectory": ".",
     "buildTypes": {
         "unittest": {
             "buildOptions": [
@@ -73,7 +73,7 @@
         {
             "name": "windows-release",
             "targetName": "brume",
-            "targetPath": "../export",
+            "targetPath": "export",
             "platforms": [
                 "windows"
             ],

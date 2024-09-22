@@ -8,7 +8,7 @@ module brume.script.input;
 import grimoire;
 import brume.constants, brume.core;
 
-void loadInputLibrary(GrLibrary library) {
+void loadInputLibrary(GrModule library) {
     GrType btnType = library.addEnum("Button", grNativeEnum!ButtonType);
     library.addFunction(&_held, "isHeld", [btnType], [grBool]);
     library.addFunction(&_pressed, "isPressed", [btnType], [grBool]);

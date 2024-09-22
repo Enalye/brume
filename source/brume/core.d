@@ -583,7 +583,7 @@ void startup() {
     _tickStartFrame = Clock.currStdTime();
 
     // Script
-    GrLibrary stdlib = grLoadStdLibrary();
+    GrLibrary stdlib = grGetStandardLibrary();
     GrLibrary brumelib = loadBrumeLibrary();
 
     GrCompiler compiler = new GrCompiler;

@@ -8,7 +8,7 @@ module brume.script.graphics;
 import grimoire;
 import brume.constants, brume.core, brume.image;
 
-void loadGraphicsLibrary(GrLibrary library) {
+void loadGraphicsLibrary(GrModule library) {
     GrType imgType = library.addNative("Image");
 
     library.addFunction(&_color, "color", [grInt]);
